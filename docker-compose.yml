@@ -1,0 +1,54 @@
+services:
+  backend:
+    build: ./backend/anfu_backend
+    container_name: django_backend
+    volumes:
+      - ./backend/anfu_backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres_db
+    environment:
+      POSTGRES_DB: anfu_db
+      POSTGRES_USER: anfu_user
+      POSTGRES_PASSWORD: anfu_password
+    networks:
+      - appnet
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn anfu_backend.wsgi:application --bind 0.0.0.0:8000"
+
+  postgres_db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: anfu_db
+      POSTGRES_USER: anfu_user
+      POSTGRES_PASSWORD: anfu_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - appnet
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres_db
+    networks:
+      - appnet
+    restart: always
+
+networks:
+  appnet:
+    driver: bridge
+
+volumes:
+  postgres_data:
