@@ -308,39 +308,40 @@ export default function GenerateReportDialog({
         <DialogContent dividers>
           {step === "select" && (
             <Box display="flex" flexWrap="wrap" gap={2}>
-              <TextField
-                select
-                fullWidth
-                label="Wilayas"
-                SelectProps={{ multiple: true }}
-                value={selectedWilayas}
-                onChange={(e) =>
-                  setSelectedWilayas(e.target.value as string[])
-                }
-              >
-                {wilayas.map((w) => (
-                  <MenuItem key={w.code} value={w.code}>
-                    {w.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+             <TextField
+  select
+  fullWidth
+  label="Wilayas"
+  SelectProps={{ multiple: true }}
+  value={selectedWilayas}
+  onChange={(e) =>
+    setSelectedWilayas(e.target.value as unknown as string[])
+  }
+>
+  {wilayas.map((w) => (
+    <MenuItem key={w.code} value={w.code}>
+      {w.name}
+    </MenuItem>
+  ))}
+</TextField>
 
-              <TextField
-                select
-                fullWidth
-                label="Types"
-                SelectProps={{ multiple: true }}
-                value={selectedTypes}
-                onChange={(e) =>
-                  setSelectedTypes(e.target.value as string[])
-                }
-              >
-                {types.map((t) => (
-                  <MenuItem key={t} value={t}>
-                    {t}
-                  </MenuItem>
-                ))}
-              </TextField>
+<TextField
+  select
+  fullWidth
+  label="Types"
+  SelectProps={{ multiple: true }}
+  value={selectedTypes}
+  onChange={(e) =>
+    setSelectedTypes(e.target.value as unknown as string[])
+  }
+>
+  {types.map((t) => (
+    <MenuItem key={t} value={t}>
+      {t}
+    </MenuItem>
+  ))}
+</TextField>
+
 
               <TextField
                 type="date"
