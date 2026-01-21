@@ -16,12 +16,8 @@ import {
   Alert,
 } from "@mui/material";
 
-import FullCalendar, {
-  DateSelectArg,
-  EventClickArg,
-  EventInput,
-  EventChangeArg,
-} from "@fullcalendar/react";
+import FullCalendar from "@fullcalendar/react";
+import { EventInput, DateSelectArg, EventClickArg, EventChangeArg } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
