@@ -17,7 +17,16 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { styled, useTheme } from "@mui/material/styles";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Legend,
+} from "recharts";
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiDialogContent-root": { padding: theme.spacing(2) },
@@ -39,7 +48,11 @@ type AISummaryDialogProps = {
   types: string[];
 };
 
-export default function AISummaryDialog({ fonciers, wilayas, types }: AISummaryDialogProps) {
+export default function AISummaryDialog({
+  fonciers,
+  wilayas,
+  types,
+}: AISummaryDialogProps) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -51,7 +64,9 @@ export default function AISummaryDialog({ fonciers, wilayas, types }: AISummaryD
   const [selectedTypes, setSelectedTypes] = React.useState<string[]>([]);
   const [startDate, setStartDate] = React.useState("");
   const [endDate, setEndDate] = React.useState("");
-  const [filteredFonciers, setFilteredFonciers] = React.useState<Foncier[]>([]);
+  const [filteredFonciers, setFilteredFonciers] = React.useState<Foncier[]>(
+    []
+  );
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -110,61 +125,91 @@ export default function AISummaryDialog({ fonciers, wilayas, types }: AISummaryD
 
   return (
     <>
-      <Button variant="contained" onClick={handleOpen}>Générer Résumé AI</Button>
+      <Button variant="contained" onClick={handleOpen}>
+        Générer Résumé AI
+      </Button>
 
-      <BootstrapDialog open={open} maxWidth="lg" fullWidth fullScreen={fullScreen}>
+      <BootstrapDialog
+        open={open}
+        maxWidth="lg"
+        fullWidth
+        fullScreen={fullScreen}
+      >
         <DialogTitle>
           Résumé AI
-          <IconButton onClick={handleClose} sx={{ position: "absolute", right: 8, top: 8 }}>
+          <IconButton
+            onClick={handleClose}
+            sx={{ position: "absolute", right: 8, top: 8 }}
+          >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
 
         <DialogContent dividers>
           <Box display="flex" flexWrap="wrap" gap={2} mb={2}>
-          <TextField
-  select
-  label="Wilayas"
-  fullWidth
-  SelectProps={{ multiple: true }}
-  value={selectedWilayas}
-  onChange={(e) =>
-    setSelectedWilayas(e.target.value as unknown as string[])
-  }
->
-  {wilayas.map((w) => (
-    <MenuItem key={w.code} value={w.code}>
-      {w.name}
-    </MenuItem>
-  ))}
-</TextField>
-
-<TextField
-  select
-  label="Types"
-  fullWidth
-  SelectProps={{ multiple: true }}
-  value={selectedTypes}
-  onChange={(e) =>
-    setSelectedTypes(e.target.value as unknown as string[])
-  }
->
-  {types.map((t) => (
-    <MenuItem key={t} value={t}>
-      {t}
-    </MenuItem>
-  ))}
-</TextField>
-
-              {types.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+            {/* Wilayas MultiSelect */}
+            <TextField
+              select
+              label="Wilayas"
+              fullWidth
+              SelectProps={{ multiple: true }}
+              value={selectedWilayas}
+              onChange={(e) =>
+                setSelectedWilayas(e.target.value as unknown as string[])
+              }
+            >
+              {wilayas.map((w) => (
+                <MenuItem key={w.code} value={w.code}>
+                  {w.name}
+                </MenuItem>
+              ))}
             </TextField>
 
-            <TextField type="date" label="Du" fullWidth InputLabelProps={{ shrink: true }} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            <TextField type="date" label="Au" fullWidth InputLabelProps={{ shrink: true }} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            {/* Types MultiSelect */}
+            <TextField
+              select
+              label="Types"
+              fullWidth
+              SelectProps={{ multiple: true }}
+              value={selectedTypes}
+              onChange={(e) =>
+                setSelectedTypes(e.target.value as unknown as string[])
+              }
+            >
+              {types.map((t) => (
+                <MenuItem key={t} value={t}>
+                  {t}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            {/* Start Date */}
+            <TextField
+              type="date"
+              label="Du"
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+
+            {/* End Date */}
+            <TextField
+              type="date"
+              label="Au"
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
           </Box>
 
           {loading && <LinearProgress />}
-          {summary && <Typography component="pre" sx={{ mt: 2, whiteSpace: "pre-wrap" }}>{summary}</Typography>}
+          {summary && (
+            <Typography component="pre" sx={{ mt: 2, whiteSpace: "pre-wrap" }}>
+              {summary}
+            </Typography>
+          )}
 
           {filteredFonciers.length > 0 && (
             <Box height={300} mt={2}>
@@ -176,7 +221,11 @@ export default function AISummaryDialog({ fonciers, wilayas, types }: AISummaryD
                   <Tooltip />
                   <Legend />
                   <Bar dataKey="surface" fill="#1976d2" name="Réelle" />
-                  <Bar dataKey="predicted_surface" fill="#ff9800" name="Prédite" />
+                  <Bar
+                    dataKey="predicted_surface"
+                    fill="#ff9800"
+                    name="Prédite"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </Box>
@@ -184,8 +233,12 @@ export default function AISummaryDialog({ fonciers, wilayas, types }: AISummaryD
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={generateAISummary} variant="contained">Générer</Button>
-          <Button onClick={handleClose} variant="outlined">Fermer</Button>
+          <Button onClick={generateAISummary} variant="contained">
+            Générer
+          </Button>
+          <Button onClick={handleClose} variant="outlined">
+            Fermer
+          </Button>
         </DialogActions>
       </BootstrapDialog>
     </>
