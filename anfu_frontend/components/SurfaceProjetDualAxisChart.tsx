@@ -95,9 +95,12 @@ export default function SurfaceProjetsDailyTotal({ fonciers }: Props) {
               orientation="right"
               label={{ value: "Nombre de Projets", angle: 90, position: "insideRight" }}
             />
-            <Tooltip 
-              formatter={(value: number) => new Intl.NumberFormat('fr-FR').format(value)}
-            />
+           <Tooltip
+  formatter={(value) =>
+    new Intl.NumberFormat("fr-FR").format(Number(value) || 0)
+  }
+/>
+
             <Legend />
 
             {/* Line: Total surface */}
