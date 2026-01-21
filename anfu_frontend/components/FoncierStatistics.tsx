@@ -193,9 +193,9 @@ const monthlyDataByType = useMemo(() => {
       map[key] = { date: d, promotion: 0, investissement: 0, logement: 0 };
     }
 
-    if (TYPES.includes(f.type)) {
-      map[key][f.type]++;
-    }
+    // if (TYPES.includes(f.type)) {
+    //   map[key][f.type]++;
+    // }
   });
 
   // Sort by date
