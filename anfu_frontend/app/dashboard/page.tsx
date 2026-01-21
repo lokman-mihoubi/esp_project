@@ -2700,6 +2700,7 @@ onClose={() => setDeleteDialogOpen(false)}
   /> */}
 
   {/* Publié */}
+     {/*
   <FormControlLabel
     control={
       <Checkbox
@@ -2711,6 +2712,7 @@ onClose={() => setDeleteDialogOpen(false)}
     }
     label="Publié"
   />
+  */}
 </DialogContent>
 
 
