@@ -16,12 +16,16 @@ import {
 } from "@mui/material";
 import axios from "axios";
 
+/* ===================== TYPES ===================== */
+
 interface HistoriqueItem {
   id: number;
   action: string;
   date: string;
   user: string;
 }
+
+/* ===================== COMPONENT ===================== */
 
 const HistoriqueTable: React.FC = () => {
   const [rows, setRows] = useState<HistoriqueItem[]>([]);
@@ -43,23 +47,21 @@ const HistoriqueTable: React.FC = () => {
           return;
         }
 
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/historique/`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/auth/historique/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         console.log("Fetched Historique:", res.data);
 
-        const data = Array.isArray(res.data)
+        // Make sure we type the fetched data
+        const data: HistoriqueItem[] = Array.isArray(res.data)
           ? res.data
           : res.data.results || [];
 
-        // 🔥 Apply frontend filtering if needed
+        // Apply frontend filtering based on permission
         const filteredData = canSeeAll
           ? data
-          : data.filter((item) => item.user === username);
+          : data.filter((item: HistoriqueItem) => item.user === username);
 
         setRows(filteredData);
       } catch (err) {
@@ -77,9 +79,7 @@ const HistoriqueTable: React.FC = () => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
@@ -114,7 +114,7 @@ const HistoriqueTable: React.FC = () => {
             <TableBody>
               {rows
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row) => (
+                .map((row: HistoriqueItem) => (
                   <TableRow key={row.id} hover>
                     <TableCell>{row.id}</TableCell>
                     <TableCell>{row.action}</TableCell>
