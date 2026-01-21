@@ -17,7 +17,7 @@ export type Foncier = {
 
   coordinates?: string;
   coordinates_dms?: string;   
-  geojson_file: File | null;
+  geojson_file?: File | string | null;
 
   usage?: string;
 
