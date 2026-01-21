@@ -52,6 +52,7 @@ import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
 import Historique from "@/components/Historique";
 import LeftMap from "@/components/LeftMap";
 
+
 export default function DashboardPage() {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState('promotion');
@@ -187,6 +188,7 @@ useEffect(() => {
 };
 
 const [usages, setUsages] = useState([]);
+
 const accessToken = localStorage.getItem('access');
 
 useEffect(() => {
@@ -291,28 +293,42 @@ const renderBoolStatus = (value?: boolean | null) => {
  const [selectedGeojson, setSelectedGeojson] = useState(null);
  const [open, setOpen] = useState(false);
  // 🔹 Handler to show GeoJSON in Dialog
-  const handleShowOnMap = async (foncier) => {
-    if (!foncier.geojson_file) {
-      alert("Aucun fichier GeoJSON disponible pour ce foncier.");
-      return;
-    }
+ 
+ const handleShowOnMap = async (foncier: Foncier) => {
+  const file = foncier.geojson_file;
 
-    try {
-      const url =
-        foncier.geojson_file.startsWith("http")
-          ? foncier.geojson_file
-          : `${process.env.NEXT_PUBLIC_API_URL}${foncier.geojson_file}`;
+  if (!file) {
+    alert("Aucun fichier GeoJSON disponible pour ce foncier.");
+    return;
+  }
+
+  try {
+    let geojson: any;
+
+    if (typeof file === "string") {
+      // If it's a string (URL or path)
+      const url = file.startsWith("http")
+        ? file
+        : `${process.env.NEXT_PUBLIC_API_URL}${file}`;
 
       const response = await fetch(url);
-      const geojson = await response.json();
-
-      setSelectedGeojson(geojson);
-      setOpen(true); // open dialog
-    } catch (err) {
-      console.error("GeoJSON Error:", err);
-      alert("Impossible de charger le fichier GeoJSON.");
+      geojson = await response.json();
+    } else if (file instanceof File) {
+      // If it's a File object (e.g., uploaded by user)
+      geojson = await new Response(file).json(); // convert File to JSON
+    } else {
+      throw new Error("Type de fichier GeoJSON non supporté");
     }
-  };
+
+    setSelectedGeojson(geojson);
+    setOpen(true);
+  } catch (err) {
+    console.error("GeoJSON Error:", err);
+    alert("Impossible de charger le fichier GeoJSON.");
+  }
+};
+
+
 
   const handleClose = () => {
     setOpen(false);
@@ -729,7 +745,7 @@ const getFileIcon = (filename: string) => {
       return <ImageIcon color="primary" />;
     case 'doc':
     case 'docx':
-      return <DescriptionIcon color="info" />;
+      return <ImageIcon color="info" />;
     default:
       return <InsertDriveFileIcon />;
   }
@@ -1558,7 +1574,7 @@ getRowId={(row) => row.id}
       <Box>
         {viewMode === 'rapport' && (
           <Box mt={4} p={3} border={1} borderColor="grey.300" borderRadius={2} bgcolor="#f5f5f5">
-            <RapportComponent fonciers={rows} />
+            {/* <RapportComponent fonciers={rows} /> */}
           </Box>
         )}
 
@@ -1841,34 +1857,39 @@ getRowId={(row) => row.id}
         fullWidth
         disabled={!canEditNormalFields}
       />
-      <Button
-        variant="outlined"
-        disabled={!canEditNormalFields}
-        onClick={async () => {
-          if (!newUsageName.trim()) return;
-          try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/usages/`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("access")}`,
-              },
-              body: JSON.stringify({
-                name: newUsageName,
-                parent_type: selectedType,
-              }),
-            });
-            const data = await res.json();
-            setUsages((prev) => [...prev, data]);
-            setNewItem({ ...newItem, usage: data.id });
-            setNewUsageName("");
-          } catch (err) {
-            console.error("Erreur lors de l'ajout de l'affectation:", err);
-          }
-        }}
-      >
-        Ajouter
-      </Button>
+    
+{/* <Button
+  variant="outlined"
+  disabled={!canEditNormalFields}
+  onClick={async () => {
+    if (!newUsageName.trim()) return;
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/usages/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("access")}`,
+        },
+        body: JSON.stringify({
+          name: newUsageName,
+          parent_type: selectedType,
+        }),
+      });
+
+      const data: Usage = await res.json(); // ✅ Type added
+
+      setUsages((prev) => [...prev, data]);
+      setNewItem({ ...newItem, usage: data.id });
+      setNewUsageName("");
+    } catch (err) {
+      console.error("Erreur lors de l'ajout de l'affectation:", err);
+    }
+  }}
+>
+  Ajouter
+</Button> */}
+
     </Box>
 
     {/* ================= SURFACE & PROGRESS ================= */}
@@ -2653,7 +2674,7 @@ onClose={() => setDeleteDialogOpen(false)}
   </TextField>
 
   {/* Terminé */}
-  <FormControlLabel
+  {/* <FormControlLabel
     control={
       <Checkbox
         checked={filters.is_completed}
@@ -2663,10 +2684,10 @@ onClose={() => setDeleteDialogOpen(false)}
       />
     }
     label="Terminé"
-  />
+  /> */}
 
   {/* Transmis */}
-  <FormControlLabel
+  {/* <FormControlLabel
     control={
       <Checkbox
         checked={filters.is_transmis}
@@ -2676,7 +2697,7 @@ onClose={() => setDeleteDialogOpen(false)}
       />
     }
     label="Transmis"
-  />
+  /> */}
 
   {/* Publié */}
   <FormControlLabel
