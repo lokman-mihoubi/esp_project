@@ -122,25 +122,40 @@ export default function AISummaryDialog({ fonciers, wilayas, types }: AISummaryD
 
         <DialogContent dividers>
           <Box display="flex" flexWrap="wrap" gap={2} mb={2}>
-            <TextField
-              select
-              label="Wilayas"
-              fullWidth
-              SelectProps={{ multiple: true }}
-              value={selectedWilayas}
-              onChange={(e) => setSelectedWilayas(e.target.value as string[])}
-            >
-              {wilayas.map((w) => <MenuItem key={w.code} value={w.code}>{w.name}</MenuItem>)}
-            </TextField>
+          <TextField
+  select
+  label="Wilayas"
+  fullWidth
+  SelectProps={{ multiple: true }}
+  value={selectedWilayas}
+  onChange={(e) =>
+    setSelectedWilayas(e.target.value as unknown as string[])
+  }
+>
+  {wilayas.map((w) => (
+    <MenuItem key={w.code} value={w.code}>
+      {w.name}
+    </MenuItem>
+  ))}
+</TextField>
 
-            <TextField
-              select
-              label="Types"
-              fullWidth
-              SelectProps={{ multiple: true }}
-              value={selectedTypes}
-              onChange={(e) => setSelectedTypes(e.target.value as string[])}
-            >
+<TextField
+  select
+  label="Types"
+  fullWidth
+  SelectProps={{ multiple: true }}
+  value={selectedTypes}
+  onChange={(e) =>
+    setSelectedTypes(e.target.value as unknown as string[])
+  }
+>
+  {types.map((t) => (
+    <MenuItem key={t} value={t}>
+      {t}
+    </MenuItem>
+  ))}
+</TextField>
+
               {types.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
             </TextField>
 
