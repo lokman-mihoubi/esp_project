@@ -18,9 +18,13 @@
         "name": "next"
       }
     ],
+    "baseUrl": ".",  // ✅ Add this
     "paths": {
-      "@/*": ["./*"],
-      "@/Models": ["types"]
+      "@/*": ["./*"],           // general root alias
+      "@/Models": ["types"],    // your models/types
+      "@/components/*": ["components/*"],
+      "@/lib/*": ["lib/*"],
+      "@/constants/*": ["constants/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
