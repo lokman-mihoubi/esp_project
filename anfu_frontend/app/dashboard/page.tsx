@@ -13,15 +13,13 @@ export default function DashboardPage() {
 
       <div className="flex flex-1">
         <div className="w-1/3 border-r">
-          <LeftMap />
+        
         </div>
 
         <div className="flex-1 p-4 space-y-4">
           <h1 className="text-xl font-bold">Dashboard Test</h1>
 
-          <CircularProgressWithLabel value={70} />
-          <CalendrierCRM />
-          <Historique />
+         
         </div>
       </div>
     </div>
