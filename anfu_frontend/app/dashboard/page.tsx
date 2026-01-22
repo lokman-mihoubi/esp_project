@@ -9,7 +9,7 @@ import LeftMap from "@/components/LeftMap";
 export default function DashboardPage() {
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+   
 
       <div className="flex flex-1">
         <div className="w-1/3 border-r">
