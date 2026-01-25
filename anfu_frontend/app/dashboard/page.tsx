@@ -1376,20 +1376,20 @@ size="small"    // <-- make it small
 </FormControl>
 
   <Button
-  variant="contained"
-  startIcon={<AddIcon />}
-  onClick={() => {
-    console.log("Button clicked");
-    setDialogOpen(true);
-  }}
-  sx={{
-    backgroundColor: "#0a6b31ff",
-    "&:hover": { backgroundColor: "#09572acc" },
-  }}
->
-  Ajouter un foncier
-</Button>
-
+        type="button" // ← important if inside a form
+        variant="contained"
+        startIcon={<AddIcon />}
+        onClick={() => {
+          console.log("Button clicked");
+          setDialogOpen(true);
+        }}
+        sx={{
+          backgroundColor: "#0a6b31ff",
+          "&:hover": { backgroundColor: "#09572acc" },
+        }}
+      >
+        Ajouter un foncier
+      </Button>
 <Button
   variant="contained"
   component="label"
