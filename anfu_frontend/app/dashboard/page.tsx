@@ -7,7 +7,7 @@ import { User, Foncier, Document, Task, StepType,Usage  } from '@/types';
 
 import {Box,TextField,Button,Stack,Typography,Snackbar,Alert,Dialog,DialogTitle,
   DialogContent,DialogActions,IconButton,Stepper,Step,StepLabel,LinearProgress} from '@mui/material';
-  
+
 import { Checkbox, FormControlLabel ,ListSubheader,Tooltip} from '@mui/material';
 import RapportComponent from '@/components/RapportComponent';
 import FoncierStatistics from '@/components/FoncierStatistics';
@@ -163,31 +163,6 @@ useEffect(() => {
   const [taskDocuments, setTaskDocuments] = useState<Document[]>([]);
 
 
-  const convertDocxToPdf = async (blob: Blob) => {
-  // Render DOCX into an HTML canvas internally
-  const container = document.createElement("div");
-  container.style.position = "absolute";
-  container.style.left = "-9999px";
-  document.body.appendChild(container);
-
-  await renderAsync(blob, container);
-
-  // Convert rendered HTML to PDF pages
-  const pdfDoc = await PDFDocument.create();
-  const canvases = container.querySelectorAll("canvas");
-
-  for (const c of canvases) {
-    const img = c.toDataURL("image/png");
-    const page = pdfDoc.addPage([c.width, c.height]);
-    const pngImage = await pdfDoc.embedPng(img);
-    page.drawImage(pngImage, { width: c.width, height: c.height });
-  }
-
-  document.body.removeChild(container);
-  return await pdfDoc.save();
-};
-
-
 const [usages, setUsages] = useState<Usage[]>([]);
 
 
@@ -295,7 +270,7 @@ const renderBoolStatus = (value?: boolean | null) => {
  const [selectedGeojson, setSelectedGeojson] = useState(null);
  const [open, setOpen] = useState(false);
  // 🔹 Handler to show GeoJSON in Dialog
- 
+
  const handleShowOnMap = async (foncier: Foncier) => {
   const file = foncier.geojson_file;
 
@@ -578,56 +553,8 @@ const handleRemoveUser = async (taskId: number, userId: number) => {
   }
 };
 // Convert Excel to PDF
-const convertExcelToPdf = async (blob: Blob): Promise<Uint8Array> => {
-const buffer = await blob.arrayBuffer();
-const workbook = XLSX.read(buffer);
-const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-const html = XLSX.utils.sheet_to_html(firstSheet);
 
-// Render HTML to a hidden container
-const container = document.createElement("div");
-container.style.position = "absolute";
-container.style.left = "-9999px";
-container.innerHTML = html;
-document.body.appendChild(container);
 
-const pdfDoc = await PDFDocument.create();
-const canvas = await html2canvas(container);
-const img = canvas.toDataURL("image/png");
-const page = pdfDoc.addPage([canvas.width, canvas.height]);
-const pngImage = await pdfDoc.embedPng(img);
-page.drawImage(pngImage, { width: canvas.width, height: canvas.height });
-
-  document.body.removeChild(container);
-  return await pdfDoc.save();
-};
-
-// Convert Word to PDF (simple approach: render to HTML first)
-const convertWordToPdf = async (blob: Blob): Promise<Uint8Array> => {
-  return new Promise((resolve) => {
-    const container = document.createElement("div");
-    container.style.position = "absolute";
-    container.style.left = "-9999px";
-    document.body.appendChild(container);
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const arrayBuffer = e.target?.result as ArrayBuffer;
-      await renderAsync(arrayBuffer, container); // ✅ use named export
-
-      const pdfDoc = await PDFDocument.create();
-      const canvas = await html2canvas(container);
-      const img = canvas.toDataURL("image/png");
-      const page = pdfDoc.addPage([canvas.width, canvas.height]);
-      const pngImage = await pdfDoc.embedPng(img);
-      page.drawImage(pngImage, { width: canvas.width, height: canvas.height });
-
-      document.body.removeChild(container);
-      resolve(await pdfDoc.save());
-    };
-    reader.readAsArrayBuffer(blob);
-  });
-};
 
 const openPdfViewer = async (documentId: number) => {
   try {
@@ -725,7 +652,7 @@ const handleDelete = async (id: number) => {
 
     showMessage("Étape ajoutée avec succès", "success");
 
-    setNewStepTitle("");  
+    setNewStepTitle("");
     setStepDialogOpen(false);
     fetchSteps(selectedItem.id);
 
@@ -1022,7 +949,7 @@ const columns: GridColDef<Foncier>[] = [
     </span>
   ),
   },
-  
+
   // { field: 'code', headerName: 'Code', flex: 1 },
   {
   field: 'wilaya',
@@ -1057,7 +984,7 @@ const columns: GridColDef<Foncier>[] = [
         case 'promotion': label = 'Promotion'; break;
         case 'autre': label = 'Autre'; break;
         case 'clinique': label = 'Clinique'; break;
-        default: label = params.value; 
+        default: label = params.value;
       }
       return <span>{label}</span>;
     }
@@ -1109,7 +1036,7 @@ const columns: GridColDef<Foncier>[] = [
 
 // { field: 'coordinates', headerName: 'Coordonnées', flex: 1 },
   { field: "surface", headerName: "Surface (m²)", flex: 1 },
-  
+
   { field: 'description', headerName: 'Description', flex: 1 },
 
 
@@ -1488,7 +1415,7 @@ size="small"    // <-- make it small
 <Button
   variant="outlined"
   color="primary"
-  startIcon={<FilterAltIcon 
+  startIcon={<FilterAltIcon
   />
 
   }
@@ -1590,7 +1517,7 @@ getRowId={(row) => row.id}
         {viewMode === 'chat' && <Messagerie></Messagerie>}
 
         {viewMode === 'calendrier' && <CalendrierCRM></CalendrierCRM>}
-        
+
         {viewMode === 'historique' && <Historique></Historique>}
 
         {viewMode === 'details' && (
@@ -1860,7 +1787,7 @@ getRowId={(row) => row.id}
         fullWidth
         disabled={!canEditNormalFields}
       />
-    
+
     <Button
       variant="outlined"
       disabled={!canEditNormalFields}
@@ -2367,7 +2294,7 @@ Utilisateurs assignés
           ))}
 
 
-          
+
         </Stack>
       </Box>
 
@@ -2482,7 +2409,7 @@ Ajouter un fichier
       {snackbar.message}
     </Alert>
   </Snackbar>
-    
+
   <Dialog
     open={pdfViewerOpen}
     onClose={() => {
