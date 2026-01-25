@@ -1378,12 +1378,13 @@ size="small"    // <-- make it small
   <Button
   variant="contained"
   startIcon={<AddIcon />}
-  onClick={() => setDialogOpen(true)}
+  onClick={() => {
+    console.log("Button clicked");
+    setDialogOpen(true);
+  }}
   sx={{
     backgroundColor: "#0a6b31ff",
-    "&:hover": {
-      backgroundColor: "#09572acc", // slightly darker on hover
-    },
+    "&:hover": { backgroundColor: "#09572acc" },
   }}
 >
   Ajouter un foncier
