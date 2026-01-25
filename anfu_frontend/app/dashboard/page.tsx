@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import React from "react";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -131,27 +131,23 @@ export default function DashboardPage() {
   const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
-  if (typeof window !== "undefined") {
-    const userRole = localStorage.getItem("role");
-    setUsername(localStorage.getItem("username"));
-    setRole(userRole);
-  }
+  const userRole = localStorage.getItem("role");
+  setUsername(localStorage.getItem("username"));
+  setRole(userRole);
 }, []);
-
 
 // 🧩 State definitions
 const [canWrite, setCanWrite] = useState(false);
 const [canView, setCanView] = useState(false);
 
 useEffect(() => {
-  if (typeof window !== "undefined") {
-    const writePermission = localStorage.getItem('can_write') === 'true';
-    const viewPermission = localStorage.getItem('can_view') === 'true';
-    setCanWrite(writePermission);
-    setCanView(viewPermission);
-  }
-}, []);
+  // ✅ Retrieve permissions from localStorage
+  const writePermission = localStorage.getItem('can_write') === 'true';
+  const viewPermission = localStorage.getItem('can_view') === 'true';
 
+  setCanWrite(writePermission);
+  setCanView(viewPermission);
+}, []);
 
 useEffect(() => {
   if (selectedItem) fetchSteps(selectedItem.id);
@@ -195,19 +191,19 @@ useEffect(() => {
 const [usages, setUsages] = useState<Usage[]>([]);
 
 
+const accessToken = localStorage.getItem('access');
+
 useEffect(() => {
-  if (typeof window !== "undefined") {
-    const accessToken = localStorage.getItem('access');
-    if (selectedType && accessToken) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/usages/?parent_type=${selectedType}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      })
+  if (selectedType && accessToken) {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/usages/?parent_type=${selectedType}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    })
       .then(async (res) => {
         if (!res.ok) {
-          const text = await res.text();
+          const text = await res.text(); // get raw response
           console.error("Error response:", text);
           throw new Error("Failed to fetch usages");
         }
@@ -215,10 +211,8 @@ useEffect(() => {
       })
       .then((data) => setUsages(data))
       .catch((err) => console.error("Error fetching usages:", err));
-    }
   }
-}, [selectedType]);
-
+}, [selectedType, accessToken]);
 
 
 
