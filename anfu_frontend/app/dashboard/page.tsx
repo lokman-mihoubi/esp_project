@@ -1375,21 +1375,25 @@ size="small"    // <-- make it small
 </Select>
 </FormControl>
 
-  <Button
-  type="button"
-  variant="contained"
-  startIcon={<AddIcon />}
-  onClick={() => {
-    console.log("Button clicked");
-    setDialogOpen(true);
-  }}
-  sx={{
-    backgroundColor: "#0a6b31ff",
-    "&:hover": { backgroundColor: "#09572acc" },
-  }}
->
-  Ajouter un foncier
-</Button>
+ <button
+        type="button"
+        onClick={() => {
+          console.log("Button clicked");
+          setDialogOpen(true);
+        }}
+        style={{
+          backgroundColor: "#0a6b31ff",
+          color: "white",
+          border: "none",
+          padding: "8px 16px",
+          borderRadius: "4px",
+          cursor: "pointer",
+        }}
+        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#09572acc")}
+        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#0a6b31ff")}
+      >
+        Ajouter un foncier
+      </button>
 
 <Button
   variant="contained"
