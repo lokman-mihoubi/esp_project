@@ -6,6 +6,12 @@ export type User = {
   email: string;
 };
 
+export type Usage = {
+  id: number;
+  name: string;
+  parent_type?: string;
+};
+
 export type Foncier = {
   id: number;
   code: string;
