@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import React from "react";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -1376,20 +1376,21 @@ size="small"    // <-- make it small
 </FormControl>
 
   <Button
-        type="button" // ← important if inside a form
-        variant="contained"
-        startIcon={<AddIcon />}
-        onClick={() => {
-          console.log("Button clicked");
-          setDialogOpen(true);
-        }}
-        sx={{
-          backgroundColor: "#0a6b31ff",
-          "&:hover": { backgroundColor: "#09572acc" },
-        }}
-      >
-        Ajouter un foncier
-      </Button>
+  type="button"
+  variant="contained"
+  startIcon={<AddIcon />}
+  onClick={() => {
+    console.log("Button clicked");
+    setDialogOpen(true);
+  }}
+  sx={{
+    backgroundColor: "#0a6b31ff",
+    "&:hover": { backgroundColor: "#09572acc" },
+  }}
+>
+  Ajouter un foncier
+</Button>
+
 <Button
   variant="contained"
   component="label"
