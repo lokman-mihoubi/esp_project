@@ -2069,16 +2069,46 @@ getRowId={(row) => row.id}
   )}
 </Popover>
 
-     <Dialog open={duplicateDialog.open} onClose={() => setDuplicateDialog({ open: false, code: "" })}>
-        <DialogTitle>Code dupliqué</DialogTitle>
-        <DialogContent>
-          <p>Le code <strong>{duplicateDialog.code}</strong> existe déjà.</p>
-          <p>Veuillez vérifier le fichier avant de continuer.</p>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDuplicateDialog({ open: false, code: "" })}>OK</Button>
-        </DialogActions>
-      </Dialog>
+  <Dialog open={duplicateDialog.open} onClose={() => setDuplicateDialog({ open: false, code: "" })}>
+    <DialogTitle>Code dupliqué</DialogTitle>
+    <DialogContent>
+      <p>Le code <strong>{duplicateDialog.code}</strong> existe déjà.</p>
+      <p>Veuillez vérifier le fichier avant de continuer.</p>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={() => setDuplicateDialog({ open: false, code: "" })}>OK</Button>
+    </DialogActions>
+  </Dialog>
+   {/* ===== IMPORT PROGRESS DIALOG ===== */}
+     <Dialog open={importing} disableEscapeKeyDown>
+  <DialogTitle>Importation en cours</DialogTitle>
+  <DialogContent style={{ minWidth: 350, paddingTop: 16 }}>
+    <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+      <LinearProgress
+        variant="determinate"
+        value={progress}
+        style={{ width: "100%", height: 10, borderRadius: 5 }}
+      />
+      <Typography variant="body1">{Math.round(progress)}% importé</Typography>
+      <Typography variant="body2" color="textSecondary">
+        Veuillez patienter pendant l'importation des fonciers...
+      </Typography>
+
+      {existingFonciers.length > 0 && (
+        <Box mt={2} width="100%">
+          <Typography variant="subtitle2" color="error">
+            Fonciers déjà existants :
+          </Typography>
+          <ul style={{ maxHeight: 150, overflowY: "auto" }}>
+            {existingFonciers.map((code) => (
+              <li key={code}>{code}</li>
+            ))}
+          </ul>
+        </Box>
+      )}
+    </Box>
+  </DialogContent>
+</Dialog>
   </main>
 );
 }
