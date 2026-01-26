@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import React from "react";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -1731,7 +1731,6 @@ getRowId={(row) => row.id}
         style={{
           backgroundColor: "#0a6b31ff",
           color: "white",
-          zIndex: 999999,  
           border: "none",
           padding: "8px 16px",
           borderRadius: "4px",
