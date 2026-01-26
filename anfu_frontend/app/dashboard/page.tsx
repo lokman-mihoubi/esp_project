@@ -1731,6 +1731,7 @@ getRowId={(row) => row.id}
         style={{
           backgroundColor: "#0a6b31ff",
           color: "white",
+          zIndex: 999999,  
           border: "none",
           padding: "8px 16px",
           borderRadius: "4px",
@@ -1750,7 +1751,6 @@ getRowId={(row) => row.id}
             width: "100vw",
             height: "100vh",
             backgroundColor: "rgba(0,0,0,0.5)",
-             zIndex: 999999,  
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
