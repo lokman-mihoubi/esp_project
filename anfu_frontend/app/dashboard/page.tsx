@@ -1,7 +1,6 @@
-"use client";
+'use client';
 import React from "react";
-import { useState } from "react";
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { logout } from '@/lib/auth';
 import { User, Foncier, Document, Task, StepType,Usage  } from '@/types';
