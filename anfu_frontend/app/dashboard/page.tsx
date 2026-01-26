@@ -1723,313 +1723,293 @@ getRowId={(row) => row.id}
   </Box>
 
      
-    <div>
-      {/* Open button */}
-      <button
-        type="button"
-        onClick={() => setDialogOpen(true)}
-        style={{
-          backgroundColor: "#0a6b31ff",
-          color: "white",
-          border: "none",
-          padding: "8px 16px",
-          borderRadius: "4px",
-          cursor: "pointer",
-        }}
+   <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        fullWidth
+        maxWidth="md"
       >
-        {isEdit ? "Modifier un foncier" : "Ajouter un foncier"}
-      </button>
+        <DialogTitle>
+          {isEdit ? "Modifier un foncier" : "Ajouter un foncier"}
+        </DialogTitle>
 
-      {/* Modal */}
-      {dialogOpen && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 9999,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "20px",
-              borderRadius: "8px",
-              width: "90%",
-              maxWidth: "600px",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              position: "relative",
+        <DialogContent dividers>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 2,
+              mt: 1,
             }}
           >
-            {/* Close button */}
-            <button
-              type="button"
-              onClick={() => setDialogOpen(false)}
-              style={{
-                position: "absolute",
-                top: "8px",
-                right: "8px",
-                border: "none",
-                background: "transparent",
-                fontSize: "18px",
-                cursor: "pointer",
-              }}
+            {/* CODE & COMMUNE */}
+            <TextField
+              label="Code"
+              value={newItem.code || ""}
+              disabled={!canEditNormalFields}
+              onChange={(e) =>
+                setNewItem({ ...newItem, code: e.target.value })
+              }
+              sx={{ flex: "1 1 45%" }}
+            />
+            <TextField
+              label="Commune"
+              value={newItem.commune || ""}
+              disabled={!canEditNormalFields}
+              onChange={(e) =>
+                setNewItem({ ...newItem, commune: e.target.value })
+              }
+              sx={{ flex: "1 1 45%" }}
+            />
+
+            {/* DESCRIPTION */}
+            <TextField
+              label="Description"
+              value={newItem.description || ""}
+              disabled={!canEditNormalFields}
+              multiline
+              rows={3}
+              onChange={(e) =>
+                setNewItem({ ...newItem, description: e.target.value })
+              }
+              sx={{ flex: "1 1 100%" }}
+            />
+
+            {/* USAGE SELECT */}
+            <Select
+              value={newItem.usage || ""}
+              disabled={!canEditNormalFields}
+              onChange={(e) =>
+                setNewItem({ ...newItem, usage: e.target.value })
+              }
+              sx={{ flex: "1 1 45%" }}
             >
-              ✖
-            </button>
+              <MenuItem value="">Sélectionnez</MenuItem>
+              {usages.map((u) => (
+                <MenuItem key={u.id} value={u.id}>
+                  {u.name}
+                </MenuItem>
+              ))}
+            </Select>
 
-            <h2>{isEdit ? "Modifier un foncier" : "Ajouter un foncier"}</h2>
-
-            {/* Form */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginTop: "8px" }}>
-              {/* CODE & COMMUNE */}
-              <input
-                type="text"
-                placeholder="Code"
-                value={newItem.code || ""}
-                disabled={!canEditNormalFields}
-                onChange={(e) => setNewItem({ ...newItem, code: e.target.value })}
-                style={{ flex: "1 1 45%", padding: "6px" }}
-              />
-              <input
-                type="text"
-                placeholder="Commune"
-                value={newItem.commune || ""}
-                disabled={!canEditNormalFields}
-                onChange={(e) => setNewItem({ ...newItem, commune: e.target.value })}
-                style={{ flex: "1 1 45%", padding: "6px" }}
-              />
-
-              {/* DESCRIPTION */}
-              <textarea
-                placeholder="Description"
-                value={newItem.description || ""}
-                disabled={!canEditNormalFields}
-                rows={3}
-                style={{ flex: "1 1 100%", padding: "6px" }}
-                onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-              />
-
-              {/* USAGE SELECT */}
-              <select
-                value={newItem.usage || ""}
-                disabled={!canEditNormalFields}
-                onChange={(e) => setNewItem({ ...newItem, usage: e.target.value })}
-                style={{ flex: "1 1 45%", padding: "6px" }}
-              >
-                <option value="">Sélectionnez</option>
-                {usages.map((u: any) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
-
-              {/* ADD NEW USAGE */}
-              <input
-                type="text"
-                placeholder="Nouvelle affectation"
-                value={newUsageName}
-                disabled={!canEditNormalFields}
-                onChange={(e) => setNewUsageName(e.target.value)}
-                style={{ flex: "1 1 45%", padding: "6px" }}
-              />
-              <button
-                type="button"
-                disabled={!canEditNormalFields}
-                style={{ flex: "0 0 auto", padding: "6px 12px" }}
-                onClick={async () => {
-                  if (!newUsageName.trim()) return;
-                  try {
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/usages/`, {
+            {/* ADD NEW USAGE */}
+            <TextField
+              label="Nouvelle affectation"
+              value={newUsageName}
+              disabled={!canEditNormalFields}
+              onChange={(e) => setNewUsageName(e.target.value)}
+              sx={{ flex: "1 1 45%" }}
+            />
+            <Button
+              variant="contained"
+              disabled={!canEditNormalFields || !newUsageName.trim()}
+              onClick={async () => {
+                if (!newUsageName.trim()) return;
+                try {
+                  const res = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/auth/usages/`,
+                    {
                       method: "POST",
                       headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem("access")}`,
+                        Authorization: `Bearer ${localStorage.getItem(
+                          "access"
+                        )}`,
                       },
                       body: JSON.stringify({
                         name: newUsageName,
                         parent_type: selectedType,
                       }),
-                    });
-                    if (!res.ok) throw new Error("Failed to create usage");
-                    const data: any = await res.json();
-                    setUsages((prev: any) => [...prev, data]);
-                    setNewItem((prev: any) => ({ ...prev, usage: data.id.toString() }));
-                    setNewUsageName("");
-                  } catch (err) {
-                    console.error("Erreur lors de l'ajout de l'affectation:", err);
-                  }
-                }}
-              >
-                Ajouter
-              </button>
-
-              {/* SURFACE & PROGRESS */}
-              <input
-                type="number"
-                placeholder="Surface (m²)"
-                value={newItem.surface || ""}
-                disabled={!canEditNormalFields}
-                onChange={(e) => setNewItem({ ...newItem, surface: Number(e.target.value) })}
-                style={{ flex: "1 1 45%", padding: "6px" }}
-              />
-              <input
-                type="number"
-                placeholder="Taux de Viabilisation (%)"
-                value={newItem.progress_viabilisation || 0}
-                disabled={!canEditNormalFields}
-                onChange={(e) =>
-                  setNewItem({ ...newItem, progress_viabilisation: Number(e.target.value) })
+                    }
+                  );
+                  if (!res.ok) throw new Error("Failed to create usage");
+                  const data = await res.json();
+                  setUsages((prev) => [...prev, data]);
+                  setNewItem((prev) => ({ ...prev, usage: data.id.toString() }));
+                  setNewUsageName("");
+                } catch (err) {
+                  console.error(
+                    "Erreur lors de l'ajout de l'affectation:",
+                    err
+                  );
                 }
-                style={{ flex: "1 1 45%", padding: "6px" }}
-              />
+              }}
+              sx={{ flex: "0 0 auto" }}
+            >
+              Ajouter
+            </Button>
 
-              {/* Coordinates */}
-              <input
-                type="text"
-                placeholder="Coordonnées (lat,long)"
-                value={newItem.coordinates || ""}
-                disabled={!canEditNormalFields}
-                onChange={(e) => setNewItem({ ...newItem, coordinates: e.target.value })}
-                style={{ flex: "1 1 45%", padding: "6px" }}
-              />
-              <input
-                type="text"
-                placeholder="Coordonnées (DMS)"
-                value={newItem.coordinates_dms || ""}
-                disabled={!canEditNormalFields}
-                onChange={(e) => setNewItem({ ...newItem, coordinates_dms: e.target.value })}
-                style={{ flex: "1 1 45%", padding: "6px" }}
-              />
+            {/* SURFACE & PROGRESS */}
+            <TextField
+              label="Surface (m²)"
+              type="number"
+              value={newItem.surface || ""}
+              disabled={!canEditNormalFields}
+              onChange={(e) =>
+                setNewItem({ ...newItem, surface: Number(e.target.value) })
+              }
+              sx={{ flex: "1 1 45%" }}
+            />
+            <TextField
+              label="Taux de Viabilisation (%)"
+              type="number"
+              value={newItem.progress_viabilisation || 0}
+              disabled={!canEditNormalFields}
+              onChange={(e) =>
+                setNewItem({
+                  ...newItem,
+                  progress_viabilisation: Number(e.target.value),
+                })
+              }
+              sx={{ flex: "1 1 45%" }}
+            />
 
-              {/* POS & CADASTRE */}
-              <input
-                type="text"
-                placeholder="POS"
-                value={newItem.POS || ""}
-                disabled={!canEditNormalFields}
-                onChange={(e) => setNewItem({ ...newItem, POS: e.target.value })}
-                style={{ flex: "1 1 45%", padding: "6px" }}
-              />
-              <input
-                type="text"
-                placeholder="Référence Section Cadastre"
-                value={newItem.Ref_Cadastre_Section || ""}
-                disabled={!canEditNormalFields}
-                onChange={(e) =>
-                  setNewItem({ ...newItem, Ref_Cadastre_Section: e.target.value })
+            {/* Coordinates */}
+            <TextField
+              label="Coordonnées (lat,long)"
+              value={newItem.coordinates || ""}
+              disabled={!canEditNormalFields}
+              onChange={(e) =>
+                setNewItem({ ...newItem, coordinates: e.target.value })
+              }
+              sx={{ flex: "1 1 45%" }}
+            />
+            <TextField
+              label="Coordonnées (DMS)"
+              value={newItem.coordinates_dms || ""}
+              disabled={!canEditNormalFields}
+              onChange={(e) =>
+                setNewItem({ ...newItem, coordinates_dms: e.target.value })
+              }
+              sx={{ flex: "1 1 45%" }}
+            />
+
+            {/* POS & CADASTRE */}
+            <TextField
+              label="POS"
+              value={newItem.POS || ""}
+              disabled={!canEditNormalFields}
+              onChange={(e) =>
+                setNewItem({ ...newItem, POS: e.target.value })
+              }
+              sx={{ flex: "1 1 45%" }}
+            />
+            <TextField
+              label="Référence Section Cadastre"
+              value={newItem.Ref_Cadastre_Section || ""}
+              disabled={!canEditNormalFields}
+              onChange={(e) =>
+                setNewItem({ ...newItem, Ref_Cadastre_Section: e.target.value })
+              }
+              sx={{ flex: "1 1 45%" }}
+            />
+            <TextField
+              label="Référence Ilot Cadastre"
+              value={newItem.Ref_Cadastre_Ilot || ""}
+              disabled={!canEditNormalFields}
+              onChange={(e) =>
+                setNewItem({ ...newItem, Ref_Cadastre_Ilot: e.target.value })
+              }
+              sx={{ flex: "1 1 45%" }}
+            />
+
+            {/* Wilaya */}
+            <Select
+              value={newItem.wilaya || ""}
+              disabled={!canEditNormalFields}
+              onChange={(e) =>
+                setNewItem({ ...newItem, wilaya: e.target.value })
+              }
+              sx={{ flex: "1 1 45%" }}
+            >
+              {WILAYAS.map((w) => (
+                <MenuItem key={w.code} value={w.code}>
+                  {w.code} - {w.name}
+                </MenuItem>
+              ))}
+            </Select>
+
+            {/* File upload */}
+            <input
+              type="file"
+              onChange={(e) => {
+                if (e.target.files?.[0]) {
+                  setNewItem({ ...newItem, geojson_file: e.target.files[0] });
                 }
-                style={{ flex: "1 1 45%", padding: "6px" }}
-              />
-              <input
-                type="text"
-                placeholder="Référence Ilot Cadastre"
-                value={newItem.Ref_Cadastre_Ilot || ""}
-                disabled={!canEditNormalFields}
-                onChange={(e) => setNewItem({ ...newItem, Ref_Cadastre_Ilot: e.target.value })}
-                style={{ flex: "1 1 45%", padding: "6px" }}
-              />
+              }}
+              disabled={!canEditNormalFields}
+              style={{ flex: "1 1 100%" }}
+            />
 
-              {/* Wilaya */}
-              <select
-                value={newItem.wilaya || ""}
-                disabled={!canEditNormalFields}
-                onChange={(e) => setNewItem({ ...newItem, wilaya: e.target.value })}
-                style={{ flex: "1 1 45%", padding: "6px" }}
-              >
-                {WILAYAS.map((w: any) => (
-                  <option key={w.code} value={w.code}>
-                    {w.code} - {w.name}
-                  </option>
-                ))}
-              </select>
-
-              {/* File upload */}
-              <input
-                type="file"
-                onChange={(e) => {
-                  if (e.target.files?.[0]) {
-                    setNewItem({ ...newItem, geojson_file: e.target.files[0] });
-                  }
-                }}
-                disabled={!canEditNormalFields}
-                style={{ flex: "1 1 100%", padding: "6px" }}
-              />
-
-              {/* Checkboxes */}
-              <label>
-                <input
-                  type="checkbox"
+            {/* Checkboxes */}
+            <FormControlLabel
+              control={
+                <Checkbox
                   checked={newItem.is_transmis || false}
                   disabled={!canDGTransmitOrPublish}
-                  onChange={(e) => setNewItem({ ...newItem, is_transmis: e.target.checked })}
-                />
-                Transmis ?
-              </label>
-
-              {newItem.is_transmis && (
-                <input
-                  type="date"
-                  value={newItem.date_transmission || ""}
-                  disabled={!canDGTransmitOrPublish}
                   onChange={(e) =>
-                    setNewItem({ ...newItem, date_transmission: e.target.value })
+                    setNewItem({ ...newItem, is_transmis: e.target.checked })
                   }
                 />
-              )}
-
-              <label>
-                <input
-                  type="checkbox"
+              }
+              label="Transmis ?"
+            />
+            {newItem.is_transmis && (
+              <TextField
+                type="date"
+                value={newItem.date_transmission || ""}
+                disabled={!canDGTransmitOrPublish}
+                onChange={(e) =>
+                  setNewItem({ ...newItem, date_transmission: e.target.value })
+                }
+              />
+            )}
+            <FormControlLabel
+              control={
+                <Checkbox
                   checked={newItem.is_published || false}
                   disabled={!canDGTransmitOrPublish}
-                  onChange={(e) => setNewItem({ ...newItem, is_published: e.target.checked })}
+                  onChange={(e) =>
+                    setNewItem({ ...newItem, is_published: e.target.checked })
+                  }
                 />
-                Publié
-              </label>
-
-              {/* Completed & Favorite */}
-              <label>
-                <input
-                  type="checkbox"
+              }
+              label="Publié"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
                   checked={newItem.is_completed || false}
                   disabled={!canUserComplete}
-                  onChange={(e) => setNewItem({ ...newItem, is_completed: e.target.checked })}
+                  onChange={(e) =>
+                    setNewItem({ ...newItem, is_completed: e.target.checked })
+                  }
                 />
-                {newItem.is_completed ? "Foncier mobilisé" : "Foncier non mobilisé"}
-              </label>
-              <label>
-                <input
-                  type="checkbox"
+              }
+              label={newItem.is_completed ? "Foncier mobilisé" : "Foncier non mobilisé"}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
                   checked={newItem.is_favorited || false}
                   disabled={!canEditNormalFields}
-                  onChange={(e) => setNewItem({ ...newItem, is_favorited: e.target.checked })}
+                  onChange={(e) =>
+                    setNewItem({ ...newItem, is_favorited: e.target.checked })
+                  }
                 />
-                Marquer comme favori
-              </label>
-            </div>
+              }
+              label="Marquer comme favori"
+            />
+          </Box>
+        </DialogContent>
 
-            {/* Actions */}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "12px" }}>
-              <button type="button" onClick={() => setDialogOpen(false)}>
-                Annuler
-              </button>
-              <button type="button" onClick={handleAdd}>
-                {isEdit ? "Mettre à jour" : "Ajouter"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)}>Annuler</Button>
+          <Button variant="contained" onClick={handleAdd}>
+            {isEdit ? "Mettre à jour" : "Ajouter"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
    
   </main>
