@@ -2068,6 +2068,31 @@ getRowId={(row) => row.id}
     </Box>
   )}
 </Popover>
+<Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+        <DialogTitle>
+          Foncier Map
+          <IconButton
+            aria-label="close"
+            onClick={handleClose}
+            style={{ position: "absolute", right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent style={{ height: "600px", padding: 0 }}>
+          {selectedGeojson && <LeftMap geojson={selectedGeojson} />}
+        </DialogContent>
+      </Dialog>
+     <Dialog open={duplicateDialog.open} onClose={() => setDuplicateDialog({ open: false, code: "" })}>
+        <DialogTitle>Code dupliqué</DialogTitle>
+        <DialogContent>
+          <p>Le code <strong>{duplicateDialog.code}</strong> existe déjà.</p>
+          <p>Veuillez vérifier le fichier avant de continuer.</p>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDuplicateDialog({ open: false, code: "" })}>OK</Button>
+        </DialogActions>
+      </Dialog>
   </main>
 );
 }
