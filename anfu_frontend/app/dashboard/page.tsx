@@ -1726,172 +1726,319 @@ getRowId={(row) => row.id}
    ;
 
 
-  {/* MUI Dialog */}
-  <Dialog
-    open={dialogOpen}
-    onClose={() => setDialogOpen(false)}
-    maxWidth="md"
-    fullWidth
-  >
-    <DialogTitle>{isEdit ? "Modifier un foncier" : "Ajouter un foncier"}</DialogTitle>
+ {/* Add Dialog */}
+    <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
+      <DialogTitle>
+        {isEdit ? "Modifier un foncier" : "Ajouter un foncier"}
+        <IconButton
+          aria-label="close"
+          onClick={() => setDialogOpen(false)}
+          sx={{ position: "absolute", right: 8, top: 8 }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+<DialogContent dividers>
+  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 1 }}>
 
-    <DialogContent dividers>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
-        {/* Code */}
-        <TextField
-          label="Code"
-          value={newItem.code || ""}
-          disabled={!canEditNormalFields}
-          onChange={(e) => setNewItem({ ...newItem, code: e.target.value })}
-          fullWidth
-        />
+    {/* ================= CODE & COMMUNE ================= */}
+    <TextField
+      label="Code"
+      value={newItem.code || ""}
+      disabled={!canEditNormalFields}
+      onChange={(e) => setNewItem({ ...newItem, code: e.target.value })}
+      sx={{ flex: "1 1 45%" }}
+    />
+    <TextField
+      label="Commune"
+      value={newItem.commune || ""}
+      disabled={!canEditNormalFields}
+      onChange={(e) => setNewItem({ ...newItem, commune: e.target.value })}
+      sx={{ flex: "1 1 45%" }}
+    />
 
-        {/* Commune */}
-        <TextField
-          label="Commune"
-          value={newItem.commune || ""}
-          disabled={!canEditNormalFields}
-          onChange={(e) => setNewItem({ ...newItem, commune: e.target.value })}
-          fullWidth
-        />
+    {/* ================= DESCRIPTION ================= */}
+    <TextField
+      label="Description"
+      value={newItem.description || ""}
+      disabled={!canEditNormalFields}
+      fullWidth
+      multiline
+      rows={3}
+      onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
+    />
 
-        {/* Description */}
-        <TextField
-          label="Description"
-          value={newItem.description || ""}
-          disabled={!canEditNormalFields}
-          onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-          fullWidth
-          multiline
-          rows={3}
-        />
+    {/* ================= USAGE ================= */}
+    <FormControl sx={{ flex: "1 1 45%" }} disabled={!canEditNormalFields}>
+      <InputLabel id="usage-label">Affectation</InputLabel>
+      <Select
+        labelId="usage-label"
+        label="Usage"
+        value={newItem.usage || ""}
+        onChange={(e) => setNewItem({ ...newItem, usage: e.target.value })}
+      >
+        <MenuItem value="">
+          <em>Sélectionnez</em>
+        </MenuItem>
+        {usages.map((u: any) => (
+          <MenuItem key={u.id} value={u.id}>
+            {u.name}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
 
-        {/* Usage */}
-        <FormControl fullWidth>
-          <InputLabel>Affectation</InputLabel>
-          <Select
-            value={newItem.usage || ""}
-            disabled={!canEditNormalFields}
-            onChange={(e) => setNewItem({ ...newItem, usage: e.target.value })}
-          >
-            <MenuItem value="">Sélectionnez</MenuItem>
-            {usages.map((u: any) => (
-              <MenuItem key={u.id} value={u.id}>
-                {u.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+    {/* ================= ADD NEW USAGE ================= */}
+    <Box sx={{ display: "flex", gap: 1, flex: "1 1 45%", mt: 1 }}>
+      <TextField
+        label="Nouvelle affectation"
+        value={newUsageName}
+        onChange={(e) => setNewUsageName(e.target.value)}
+        fullWidth
+        disabled={!canEditNormalFields}
+      />
+    
+<Button
+  variant="outlined"
+  disabled={!canEditNormalFields}
+  onClick={async () => {
+    if (!newUsageName.trim()) return;
 
-        {/* Surface */}
-        <TextField
-          type="number"
-          label="Surface (m²)"
-          value={newItem.surface || ""}
-          disabled={!canEditNormalFields}
-          onChange={(e) => setNewItem({ ...newItem, surface: Number(e.target.value) })}
-          fullWidth
-        />
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/usages/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("access")}`,
+        },
+        body: JSON.stringify({
+          name: newUsageName,
+          parent_type: selectedType,
+        }),
+      });
 
-        {/* Progress */}
-        <TextField
-          type="number"
-          label="Taux de Viabilisation (%)"
-          value={newItem.progress_viabilisation || 0}
-          disabled={!canEditNormalFields}
-          onChange={(e) =>
-            setNewItem({ ...newItem, progress_viabilisation: Number(e.target.value) })
-          }
-          fullWidth
-        />
+      const data: Usage = await res.json(); // ✅ Type added
 
-        {/* Checkboxes */}
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={newItem.is_transmis || false}
-              disabled={!canDGTransmitOrPublish}
-              onChange={(e) =>
-                setNewItem({ ...newItem, is_transmis: e.target.checked })
-              }
-            />
-          }
-          label="Transmis ?"
-        />
+      setUsages((prev) => [...prev, data]);
+     setNewItem({ ...newItem, usage: data.id.toString() });
+      setNewUsageName("");
+    } catch (err) {
+      console.error("Erreur lors de l'ajout de l'affectation:", err);
+    }
+  }}
+>
+  Ajouter
+</Button>
 
-        {newItem.is_transmis && (
-          <TextField
-            type="date"
-            value={newItem.date_transmission || ""}
-            disabled={!canDGTransmitOrPublish}
-            onChange={(e) =>
-              setNewItem({ ...newItem, date_transmission: e.target.value })
-            }
-            fullWidth
-          />
-        )}
+    </Box>
 
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={newItem.is_published || false}
-              disabled={!canDGTransmitOrPublish}
-              onChange={(e) =>
-                setNewItem({ ...newItem, is_published: e.target.checked })
-              }
-            />
-          }
-          label="Publié"
-        />
+    {/* ================= SURFACE & PROGRESS ================= */}
+    <TextField
+      label="Surface (m²)"
+      type="number"
+      value={newItem.surface || ""}
+      disabled={!canEditNormalFields}
+      onChange={(e) => setNewItem({ ...newItem, surface: Number(e.target.value) })}
+      sx={{ flex: "1 1 45%" }}
+    />
+    <TextField
+      label="Taux de Viabilisation (%)"
+      type="number"
+      value={newItem.progress_viabilisation || 0}
+      disabled={!canEditNormalFields}
+      onChange={(e) =>
+        setNewItem({ ...newItem, progress_viabilisation: Number(e.target.value) })
+      }
+      sx={{ flex: "1 1 45%" }}
+    />
 
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={newItem.is_completed || false}
-              disabled={!canUserComplete}
-              onChange={(e) =>
-                setNewItem({ ...newItem, is_completed: e.target.checked })
-              }
-            />
-          }
-          label={newItem.is_completed ? "Foncier mobilisé" : "Foncier non mobilisé"}
-        />
+    {/* ================= COORDINATES ================= */}
+    <TextField
+      label="Coordonnées (lat,long)"
+      value={newItem.coordinates || ""}
+      disabled={!canEditNormalFields}
+      onChange={(e) => setNewItem({ ...newItem, coordinates: e.target.value })}
+      sx={{ flex: "1 1 45%" }}
+    />
+    <TextField
+      label="Coordonnées (DMS)"
+      value={newItem.coordinates_dms || ""}
+      disabled={!canEditNormalFields}
+      onChange={(e) => setNewItem({ ...newItem, coordinates_dms: e.target.value })}
+      sx={{ flex: "1 1 45%" }}
+    />
 
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={newItem.is_favorited || false}
-              disabled={!canEditNormalFields}
-              onChange={(e) =>
-                setNewItem({ ...newItem, is_favorited: e.target.checked })
-              }
-            />
-          }
-          label="Marquer comme favori"
-        />
-      </div>
+    {/* ================= POS & CADASTRE ================= */}
+    <TextField
+      label="POS"
+      value={newItem.POS || ""}
+      disabled={!canEditNormalFields}
+      onChange={(e) => setNewItem({ ...newItem, POS: e.target.value })}
+      sx={{ flex: "1 1 45%" }}
+    />
+    <TextField
+      label="Référence Section Cadastre"
+      value={newItem.Ref_Cadastre_Section || ""}
+      disabled={!canEditNormalFields}
+      onChange={(e) => setNewItem({ ...newItem, Ref_Cadastre_Section: e.target.value })}
+      sx={{ flex: "1 1 45%" }}
+    />
+    <TextField
+      label="Référence Ilot Cadastre"
+      value={newItem.Ref_Cadastre_Ilot || ""}
+      disabled={!canEditNormalFields}
+      onChange={(e) => setNewItem({ ...newItem, Ref_Cadastre_Ilot: e.target.value })}
+      sx={{ flex: "1 1 45%" }}
+    />
 
-      {/* File upload */}
+    {/* ================= WILAYA ================= */}
+    <FormControl sx={{ flex: "1 1 45%" }} disabled={!canEditNormalFields}>
+      <InputLabel>Wilaya</InputLabel>
+      <Select
+        value={newItem.wilaya || ""}
+        onChange={(e) => setNewItem({ ...newItem, wilaya: e.target.value })}
+      >
+        {WILAYAS.map((wilaya) => (
+          <MenuItem key={wilaya.code} value={wilaya.code}>
+            {wilaya.code} - {wilaya.name}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+
+    {/* ================= FILE UPLOAD ================= */}
+    <Button
+      component="label"
+      variant="outlined"
+      startIcon={<CloudUploadIcon />}
+      sx={{ flex: "1 1 100%" }}
+      disabled={!canEditNormalFields}
+    >
+      Ajouter un fichier GeoJSON
       <input
+        hidden
         type="file"
         onChange={(e) => {
           if (e.target.files?.[0]) {
             setNewItem({ ...newItem, geojson_file: e.target.files[0] });
           }
         }}
-        disabled={!canEditNormalFields}
-        style={{ marginTop: "12px" }}
       />
-    </DialogContent>
+    </Button>
 
-    <DialogActions>
-      <Button onClick={() => setDialogOpen(false)}>Annuler</Button>
-      <Button variant="contained" onClick={handleAdd}>
-        {isEdit ? "Mettre à jour" : "Ajouter"}
-      </Button>
-    </DialogActions>
-  </Dialog>
+    {/* ================= CHECKBOXES ================= */}
+    {/* DG Only */}
+    <FormControlLabel
+      control={
+        <Checkbox
+          checked={newItem.is_transmis || false}
+          disabled={!canDGTransmitOrPublish}
+          onChange={(e) => setNewItem({ ...newItem, is_transmis: e.target.checked })}
+        />
+      }
+      label="Transmis ?"
+      sx={{ flex: "1 1 45%" }}
+    />
 
+    {newItem.is_transmis && (
+      <TextField
+        label="Date de transmission"
+        type="date"
+        value={newItem.date_transmission || ""}
+        disabled={!canDGTransmitOrPublish}
+        onChange={(e) => setNewItem({ ...newItem, date_transmission: e.target.value })}
+        InputLabelProps={{ shrink: true }}
+        sx={{ flex: "1 1 45%" }}
+      />
+    )}
+
+    <FormControlLabel
+      control={
+        <Checkbox
+          checked={newItem.is_published || false}
+          disabled={!canDGTransmitOrPublish}
+          onChange={(e) => setNewItem({ ...newItem, is_published: e.target.checked })}
+        />
+      }
+      label="Publié"
+      sx={{ flex: "1 1 45%" }}
+    />
+
+    {/* Confirmations */}
+    <FormControlLabel
+      control={
+        <Checkbox
+          checked={newItem.is_confirmed_by_duac || false}
+          disabled={!canEditNormalFields}
+          onChange={(e) => setNewItem({ ...newItem, is_confirmed_by_duac: e.target.checked })}
+        />
+      }
+      label="Confirmé par DUAC"
+    />
+    <FormControlLabel
+      control={
+        <Checkbox
+          checked={newItem.is_confirmed_by_DCCF || false}
+          disabled={!canEditNormalFields}
+          onChange={(e) => setNewItem({ ...newItem, is_confirmed_by_DCCF: e.target.checked })}
+        />
+      }
+      label="Confirmé par DCCF"
+    />
+    <FormControlLabel
+      control={
+        <Checkbox
+          checked={newItem.is_confirmed_by_Domaine || false}
+          disabled={!canEditNormalFields}
+          onChange={(e) => setNewItem({ ...newItem, is_confirmed_by_Domaine: e.target.checked })}
+        />
+      }
+      label="Confirmé par Domaine"
+    />
+
+    {/* Completed (User only) */}
+    <FormControlLabel
+      control={
+        <Checkbox
+          checked={newItem.is_completed || false}
+          disabled={!canUserComplete}
+          onChange={(e) => setNewItem({ ...newItem, is_completed: e.target.checked })}
+        />
+      }
+      label={newItem.is_completed ? "Foncier mobilisé" : "Foncier non mobilisé"}
+    />
+
+    {/* Favorite */}
+    <FormControlLabel
+      control={
+        <Checkbox
+          checked={newItem.is_favorited || false}
+          disabled={!canEditNormalFields}
+          onChange={(e) => setNewItem({ ...newItem, is_favorited: e.target.checked })}
+          icon={<StarBorderIcon />}
+          checkedIcon={<StarIcon />}
+          sx={{ "&.Mui-checked": { color: "#f5c518" } }}
+        />
+      }
+      label="Marquer comme favori"
+      sx={{ flex: "1 1 100%" }}
+    />
+
+  </Box>
+</DialogContent>
+
+
+
+
+      <DialogActions>
+        <Button onClick={() => setDialogOpen(false)} color="secondary">
+          Annuler
+        </Button>
+        <Button onClick={handleAdd} variant="contained" color="primary">
+          {isEdit ? "Mettre à jour" : "Ajouter"}
+        </Button>
+      </DialogActions>
+    </Dialog>
    
   </main>
 );
