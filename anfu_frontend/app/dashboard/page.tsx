@@ -2039,7 +2039,35 @@ getRowId={(row) => row.id}
         </Button>
       </DialogActions>
     </Dialog>
-   
+   <Messagerie></Messagerie>
+<Popover
+  open={Boolean(popoverAnchor)}
+  anchorEl={popoverAnchor}
+  onClose={closePopover}
+  disableRestoreFocus
+  anchorOrigin={{
+    vertical: "center",
+    horizontal: "right",
+  }}
+  transformOrigin={{
+    vertical: "center",
+    horizontal: "left",
+  }}
+>
+  {popoverRow && (
+    <Box p={1.5} minWidth={200}>
+      <Typography variant="body2">
+        DUAC : {popoverRow.is_confirmed_by_duac ? "✅ Oui" : "❌ Non"}
+      </Typography>
+      <Typography variant="body2">
+        DCCF : {popoverRow.is_confirmed_by_DCCF ? "✅ Oui" : "❌ Non"}
+      </Typography>
+      <Typography variant="body2">
+        Domaine : {popoverRow.is_confirmed_by_Domaine ? "✅ Oui" : "❌ Non"}
+      </Typography>
+    </Box>
+  )}
+</Popover>
   </main>
 );
 }
