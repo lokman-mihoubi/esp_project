@@ -1750,6 +1750,7 @@ getRowId={(row) => row.id}
             width: "100vw",
             height: "100vh",
             backgroundColor: "rgba(0,0,0,0.5)",
+             zIndex: 999999,  
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
