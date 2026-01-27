@@ -1,0 +1,286 @@
+"use client";
+
+import * as React from "react";
+import { SimpleTreeView, TreeItem } from "@mui/x-tree-view";
+import {
+  Box,
+  Typography,
+  Collapse,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Slider,
+} from "@mui/material";
+import { Foncier } from "@/types";
+import { WILAYAS } from "@/types/wilayas";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { Button } from "@mui/material";
+
+/* ------------ HELPERS ------------ */
+const branch = (type: "mid" | "last", length = 22) =>
+  `${type === "last" ? "└" : "├"}${"─".repeat(length)}`;
+
+type FoncierTreeChartProps = {
+  fonciers: Foncier[];
+};
+
+export default function FoncierTreeChart({ fonciers }: FoncierTreeChartProps) {
+  const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
+  const [selectedType, setSelectedType] = React.useState("all");
+  const [selectedWilaya, setSelectedWilaya] = React.useState("all");
+  const [viabilisationRange, setViabilisationRange] = React.useState<number[]>([
+    0, 100,
+  ]);
+
+  /* ------------ FILTER ------------ */
+  const filteredFonciers = React.useMemo(() => {
+    return fonciers.filter((f) => {
+      if (selectedType !== "all" && f.type !== selectedType) return false;
+      if (selectedWilaya !== "all" && f.wilaya !== selectedWilaya) return false;
+      const v = f.progress_viabilisation ?? 0;
+      return v >= viabilisationRange[0] && v <= viabilisationRange[1];
+    });
+  }, [fonciers, selectedType, selectedWilaya, viabilisationRange]);
+
+  /* ------------ GROUP ------------ */
+  const grouped = React.useMemo(() => {
+    const result: Record<
+      string,
+      Record<
+        string,
+        { total: number; transmis: number; publie: number; termine: number }
+      >
+    > = {};
+
+    filteredFonciers.forEach((f) => {
+      if (!f.type || !f.wilaya) return;
+
+      result[f.type] ??= {};
+      result[f.type][f.wilaya] ??= {
+        total: 0,
+        transmis: 0,
+        publie: 0,
+        termine: 0,
+      };
+
+      const s = result[f.type][f.wilaya];
+      s.total++;
+      if (f.is_transmis) s.transmis++;
+      if (f.is_published) s.publie++;
+      if (f.is_completed) s.termine++;
+    });
+
+    return result;
+  }, [filteredFonciers]);
+  const treeRef = React.useRef<HTMLDivElement>(null);
+
+  const downloadPDF = async () => {
+  if (!treeRef.current) return;
+
+  const canvas = await html2canvas(treeRef.current, {
+    scale: 2,
+    backgroundColor: "#ffffff",
+  });
+
+  const imgData = canvas.toDataURL("image/png");
+
+  const pdf = new jsPDF("p", "mm", "a4");
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const imgHeight = (canvas.height * pageWidth) / canvas.width;
+
+  pdf.addImage(imgData, "PNG", 0, 10, pageWidth, imgHeight);
+  pdf.save("foncier-tree.pdf");
+};
+
+  return (
+    <Box>
+      {/* ------------ FILTERS ------------ */}
+      <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap" }}>
+        <FormControl sx={{ minWidth: 160 }}>
+          <InputLabel>Type</InputLabel>
+          <Select value={selectedType} onChange={(e) => setSelectedType(e.target.value)}>
+            <MenuItem value="all">All</MenuItem>
+            {[...new Set(fonciers.map((f) => f.type))].map(
+              (type) =>
+                type && (
+                  <MenuItem key={type} value={type}>
+                    {type}
+                  </MenuItem>
+                )
+            )}
+          </Select>
+        </FormControl>
+
+        <FormControl sx={{ minWidth: 160 }}>
+          <InputLabel>Wilaya</InputLabel>
+          <Select value={selectedWilaya} onChange={(e) => setSelectedWilaya(e.target.value)}>
+            <MenuItem value="all">All</MenuItem>
+            {WILAYAS.map((w) => (
+              <MenuItem key={w.code} value={w.code}>
+                {w.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <Box sx={{ width: 260 }}>
+          <Typography gutterBottom>Viabilisation (%)</Typography>
+          <Slider
+            value={viabilisationRange}
+            onChange={(_, v) => setViabilisationRange(v as number[])}
+            valueLabelDisplay="auto"
+            min={0}
+            max={100}
+          />
+        </Box>
+      </Box>
+      <Button variant="contained" onClick={downloadPDF}>
+  Download PDF
+</Button>
+
+      {/* ------------ TREE ------------ */}
+      <Box ref={treeRef}>
+      <SimpleTreeView
+        expandedItems={expandedItems}
+        onExpandedItemsChange={(_, items) => setExpandedItems(items)}
+      >
+        <TreeItem itemId="foncier-root" label="🏗️ Foncier">
+          {Object.entries(grouped).map(([type, wilayas], i, tArr) => {
+            const isLastType = i === tArr.length - 1;
+            const typeId = `type-${type}`;
+
+            return (
+              <TreeItem
+                key={typeId}
+                itemId={typeId}
+                label={
+                  <Box sx={{ fontFamily: "monospace", ml: 1 }}>
+                    {branch(isLastType ? "last" : "mid", 26)} 📁{" "}
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </Box>
+                }
+              >
+                {Object.entries(wilayas).map(([wilayaCode, stats], j, wArr) => {
+                  const isLastWilaya = j === wArr.length - 1;
+                  const wilayaName =
+                    WILAYAS.find(
+                      (w) => w.code === wilayaCode || w.name === wilayaCode
+                    )?.name || wilayaCode;
+
+                  const wilayaId = `${typeId}-wilaya-${wilayaCode}`;
+
+                  /* ---- VIABILISATION STATS ---- */
+                  const viabs = filteredFonciers.filter(
+                    (f) =>
+                      f.type === type &&
+                      f.wilaya === wilayaCode &&
+                      f.progress_viabilisation !== undefined
+                  );
+
+                  const ranges = [
+                    { label: "0%", min: 0, max: 0 },
+                    { label: "1–30%", min: 1, max: 30 },
+                    { label: "31–70%", min: 31, max: 70 },
+                    { label: "71–100%", min: 71, max: 100 },
+                  ];
+
+                  return (
+                    <TreeItem
+                      key={wilayaId}
+                      itemId={wilayaId}
+                      label={
+                        <Box sx={{ fontFamily: "monospace", ml: 2 }}>
+                          {branch(isLastWilaya ? "last" : "mid", 20)} 📍{" "}
+                          {wilayaName} ({stats.total})
+                        </Box>
+                      }
+                    >
+                      <Collapse in={expandedItems.includes(wilayaId)} timeout="auto">
+                        <Branch parentId={wilayaId} label="Transmis" value={stats.transmis} type="mid" />
+                        <Branch parentId={wilayaId} label="Publié" value={stats.publie} type="mid" />
+                        <Branch parentId={wilayaId} label="Terminé" value={stats.termine} type="mid" />
+
+                        {/* ---- TAUX DE VIABILISATION ---- */}
+                        <TreeItem
+                          itemId={`${wilayaId}-viabilisation`}
+                          label={
+                            <Box sx={{ fontFamily: "monospace", ml: 3 }}>
+                              {branch("last", 18)} 🧪 Taux de viabilisation
+                            </Box>
+                          }
+                        >
+                          {ranges.map((r, idx) => {
+                            const count = viabs.filter(
+                              (f) =>
+                                (f.progress_viabilisation ?? 0) >= r.min &&
+                                (f.progress_viabilisation ?? 0) <= r.max
+                            ).length;
+
+                            return (
+                              <Branch
+                                key={`${wilayaId}-${r.label}`}
+                                parentId={`${wilayaId}-viabilisation`}
+                                label={r.label}
+                                value={count}
+                                type={idx === ranges.length - 1 ? "last" : "mid"}
+                                indent={4}
+                              />
+                            );
+                          })}
+                        </TreeItem>
+                      </Collapse>
+                    </TreeItem>
+                  );
+                })}
+              </TreeItem>
+            );
+          })}
+        </TreeItem>
+      </SimpleTreeView>
+</Box>
+      
+    </Box>
+  );
+}
+
+/* ------------ BRANCH COMPONENT ------------ */
+function Branch({
+  parentId,
+  label,
+  value,
+  type,
+  indent = 3,
+}: {
+  parentId: string;
+  label: string;
+  value: number;
+  type: "mid" | "last";
+  indent?: number;
+}) {
+  return (
+    <TreeItem
+      itemId={`${parentId}-${label}`}
+      label={
+        <Box
+          sx={{
+            fontFamily: "monospace",
+            ml: indent,
+            display: "flex",
+            justifyContent: "space-between",
+            width: 420,
+            transition: "all 0.2s ease",
+            "&:hover": {
+              backgroundColor: "#f5f5f5",
+              transform: "scale(1.02)",
+            },
+          }}
+        >
+          <span>{branch(type, 16)} {label}</span>
+          <strong>({value})</strong>
+        </Box>
+      }
+    />
+  );
+}
