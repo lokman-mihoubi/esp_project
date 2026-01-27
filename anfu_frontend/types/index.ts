@@ -12,6 +12,13 @@ export type Usage = {
   parent_type?: string;
 };
 
+// foncier.types.ts
+export type FoncierType =
+  | "promotion"
+  | "investissement"
+  | "logement"
+  | "favoris";
+
 export type Foncier = {
   id: number;
   code: string;
@@ -48,6 +55,7 @@ export type Foncier = {
   is_confirmed_by_duac?: boolean | null;
   is_confirmed_by_DCCF?: boolean | null;
   is_confirmed_by_Domaine?: boolean | null;
+  type?: FoncierType;
 };
 
 
