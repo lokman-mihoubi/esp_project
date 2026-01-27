@@ -1510,7 +1510,7 @@ getRowId={(row) => row.id}
       <Box>
         {viewMode === 'rapport' && (
           <Box mt={4} p={3} border={1} borderColor="grey.300" borderRadius={2} bgcolor="#f5f5f5">
-            {/* <RapportComponent fonciers={rows} /> */}
+            <RapportComponent fonciers={rows} /> 
           </Box>
         )}
 
