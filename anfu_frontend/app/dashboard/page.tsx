@@ -9,14 +9,14 @@ import {Box,TextField,Button,Stack,Typography,Snackbar,Alert,Dialog,DialogTitle,
   DialogContent,DialogActions,IconButton,Stepper,Step,StepLabel,LinearProgress} from '@mui/material';
 
 import { Checkbox, FormControlLabel ,ListSubheader,Tooltip} from '@mui/material';
-import RapportComponent from '@/components/RapportComponent';
+
 import FoncierStatistics from '@/components/FoncierStatistics';
 import Settings from '@/components/Settings';
 import Tasks from '@/components/Tasks';
 import { WILAYAS } from '@/types/wilayas';
 
 import * as XLSX from "xlsx";
-
+import dynamic from 'next/dynamic';
 import { DataGrid, GridColDef, GridActionsCellItem, GridRenderCellParams,GridCellParams,GridRowParams } from '@mui/x-data-grid';
 import FoncierGridSkeleton from "@/components/FoncierGridSkeleton";
 import StarIcon from "@mui/icons-material/Star";
@@ -105,6 +105,11 @@ export default function DashboardPage() {
   'list' | 'details' | 'rapport' | 'statistics' | 'settings' | 'tasks' | 'chat'| 'calendrier'| 'historique'
 >('list');
 
+
+const RapportComponent = dynamic(
+  () => import('@/components/RapportComponent'),
+  { ssr: false }
+);
   const [selectedItem, setSelectedItem] = useState<Foncier | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] =
@@ -1510,7 +1515,7 @@ getRowId={(row) => row.id}
       <Box>
         {viewMode === 'rapport' && (
           <Box mt={4} p={3} border={1} borderColor="grey.300" borderRadius={2} bgcolor="#f5f5f5">
-            <RapportComponent fonciers={rows} /> 
+            <RapportComponent fonciers={rows} />
           </Box>
         )}
 
