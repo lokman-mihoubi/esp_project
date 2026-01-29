@@ -2488,8 +2488,116 @@ Ajouter un fichier
       {snackbar.message}
     </Alert>
   </Snackbar>
+ <Dialog
+    open={pdfViewerOpen}
+    onClose={() => {
+setPdfViewerOpen(false);
+if (pdfBlobUrl) {
+URL.revokeObjectURL(pdfBlobUrl); // Clean up
+}
+setPdfBlobUrl('');
+}}
 
 
+    fullWidth
+    maxWidth="lg"
+  >
+    {canView ? (
+<>
+<DialogTitle>
+  Aperçu du document PDF
+  <IconButton
+    aria-label="close"
+    onClick={() => {
+      setPdfViewerOpen(false);
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+      }
+      setPdfBlobUrl('');
+    }}
+    sx={{ position: 'absolute', right: 8, top: 8 }}
+  >
+    <CloseIcon />
+  </IconButton>
+</DialogTitle>
+
+<DialogContent dividers>
+  {pdfBlobUrl ? (
+    <iframe
+      src={pdfBlobUrl}
+      width="100%"
+      height="600px"
+      style={{ border: 'none' }}
+    />
+  ) : (
+    <Typography>Chargement du PDF...</Typography>
+  )}
+</DialogContent>
+</>
+) : (
+<>
+<DialogTitle>
+  Accès refusé
+  <IconButton
+    aria-label="close"
+    onClick={() => setPdfViewerOpen(false)}
+    sx={{ position: 'absolute', right: 8, top: 8 }}
+  >
+    <CloseIcon />
+  </IconButton>
+</DialogTitle>
+
+<DialogContent dividers>
+  <Box
+    display="flex"
+    flexDirection="column"
+    alignItems="center"
+    justifyContent="center"
+    py={6}
+  >
+    <BlockIcon sx={{ fontSize: 100, color: 'red', mb: 2 }} />
+    <Typography variant="h6" color="error" align="center" gutterBottom>
+      Vous n’avez pas la permission de visualiser ce document
+    </Typography>
+    <Typography variant="body2" color="text.secondary" align="center">
+      Veuillez contacter un administrateur si vous pensez qu’il s’agit d’une erreur.
+    </Typography>
+  </Box>
+</DialogContent>
+</>
+)}
+  </Dialog>
+  <Dialog
+open={deleteDialogOpen}
+onClose={() => setDeleteDialogOpen(false)}
+>
+<DialogTitle>Confirmer la suppression</DialogTitle>
+<DialogContent>
+<Typography>Voulez-vous vraiment supprimer cette tâche ?</Typography>
+</DialogContent>
+<DialogActions>
+<Button onClick={() => setDeleteDialogOpen(false)} color="secondary">
+  Annuler
+</Button>
+<Button
+  onClick={async () => {
+    if (taskToDelete !== null) {
+      try {
+        await handleDeleteTask(taskToDelete);
+        setDeleteDialogOpen(false);
+        setTaskToDelete(null);
+      } catch (err) {
+        showMessage('Erreur lors de la suppression', 'error');
+      }
+    }
+  }}
+  color="error"
+  variant="contained"
+>
+  Supprimer
+</Button>
+</DialogActions>
+  </Dialog>
   </main>
 );
 }
