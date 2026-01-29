@@ -2114,6 +2114,382 @@ getRowId={(row) => row.id}
     </Box>
   </DialogContent>
 </Dialog>
+
+ {/* Step Dialog */}
+    <Dialog open={stepDialogOpen} onClose={() => setStepDialogOpen(false)}>
+      <DialogTitle>Ajouter une étape</DialogTitle>
+      <DialogContent>
+        <TextField fullWidth label="Titre de l'étape" value={newStepTitle} onChange={(e) => setNewStepTitle(e.target.value)} sx={{ mt: 2 }} />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setStepDialogOpen(false)}>Annuler</Button>
+        <Button
+          onClick={async () => {
+            await handleCreateStep(); // ✅ now calls the secured function
+          }}
+          variant="contained"
+        >
+          Ajouter
+        </Button>
+      </DialogActions>
+    </Dialog>
+
+    {/* Task Dialog */}
+  <Dialog
+open={taskDialogOpen}
+onClose={() => setTaskDialogOpen(false)}
+maxWidth="sm" // Fix width
+fullWidth
+>
+<DialogTitle>Ajouter une tâche</DialogTitle>
+<DialogContent>
+  <Stack spacing={2} mt={1}>
+    <TextField
+      fullWidth
+      label="Titre de la tâche"
+      value={newTaskTitle}
+      onChange={(e) => setNewTaskTitle(e.target.value)}
+    />
+
+    {/* Users select with chips */}
+    <FormControl fullWidth>
+      <InputLabel id="assigned-users-label">Assign Users</InputLabel>
+      <Select
+        labelId="assigned-users-label"
+        multiple
+        value={selectedTaskUsers}
+        onChange={(e) => setSelectedTaskUsers(e.target.value as number[])}
+        renderValue={(selected) => (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {users
+              .filter((u) => selected.includes(u.id))
+              .map((u) => (
+                <Chip key={u.id} label={u.username} />
+              ))}
+          </Box>
+        )}
+      >
+        {users.map((user) => (
+          <MenuItem key={user.id} value={user.id}>
+            <Checkbox checked={selectedTaskUsers.includes(user.id)} />
+            <Typography>{user.username}</Typography>
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+
+    <FormControl fullWidth>
+      <InputLabel id="priority-label">Priorité</InputLabel>
+      <Select
+        labelId="priority-label"
+        value={newTaskPriority}
+        label="Priorité"
+        onChange={(e) =>
+          setNewTaskPriority(e.target.value as 'low' | 'medium' | 'high')
+        }
+      >
+        <MenuItem value="low">Faible</MenuItem>
+        <MenuItem value="medium">Moyenne</MenuItem>
+        <MenuItem value="high">Élevée</MenuItem>
+      </Select>
+    </FormControl>
+  </Stack>
+</DialogContent>
+
+<DialogActions>
+  <Button onClick={() => setTaskDialogOpen(false)}>Annuler</Button>
+  <Button
+  onClick={async () => {
+    if (!selectedStepId) return;
+
+    try {
+      const accessToken = localStorage.getItem("access"); // ✅ get token
+      if (!accessToken) {
+        showMessage("Vous n'êtes pas authentifié", "error");
+        return;
+      }
+
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`, // ✅ include token
+      };
+
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/steps/${selectedStepId}/tasks/`,
+        {
+          title: newTaskTitle,
+          priority: newTaskPriority,
+          assigned_users: selectedTaskUsers,
+        },
+        { headers } // ✅ secure
+      );
+
+      // Reset fields
+      setNewTaskTitle("");
+      setNewTaskPriority("medium");
+      setSelectedTaskUsers([]);
+      setTaskDialogOpen(false);
+
+      if (selectedItem) fetchSteps(selectedItem.id);
+
+      showMessage("Tâche ajoutée avec succès", "success");
+
+    } catch (error) {
+      console.error(error);
+      showMessage("Erreur lors de la création de la tâche", "error");
+    }
+  }}
+  variant="contained"
+>
+  Ajouter
+</Button>
+
+</DialogActions>
+  </Dialog>
+
+
+  <Dialog
+open={taskDetailsDialogOpen}
+onClose={() => setTaskDetailsDialogOpen(false)}
+fullWidth
+maxWidth={false}
+PaperProps={{
+sx: {
+  width: '90vw',
+  height: '90vh',
+  maxWidth: 'none',
+},
+}}
+>
+<DialogTitle>
+Détails de la tâche
+<IconButton
+  aria-label="close"
+  onClick={() => setTaskDetailsDialogOpen(false)}
+  sx={{ position: 'absolute', right: 8, top: 8 }}
+>
+  <CloseIcon />
+</IconButton>
+</DialogTitle>
+
+<DialogContent dividers sx={{ height: 'calc(100% - 64px - 52px)', overflow: 'auto' }}>
+{selectedTask ? (
+  <Stack spacing={2}>
+    <Typography variant="h6">{selectedTask.title}</Typography>
+    <Typography variant="body2">
+      Statut: {selectedTask.is_done ? 'Terminée' : 'En cours'}
+    </Typography>
+    {/* Assigned Users */}
+    <Box>
+<Typography variant="subtitle1" gutterBottom>
+Utilisateurs assignés
+</Typography>
+{selectedTask.assigned_users && selectedTask.assigned_users.length > 0 ? (
+<Stack direction="row" spacing={1} flexWrap="wrap">
+{selectedTask.assigned_users.map((user) => (
+  <Chip
+    key={user.id}
+    label={`${user.username} (${user.email})`}
+    variant="outlined"
+    onDelete={() => handleRemoveUser(selectedTask.id, user.id)}
+  />
+))}
+</Stack>
+) : (
+<Typography color="text.secondary">Aucun utilisateur assigné</Typography>
+)}
+
+</Box>
+
+    <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="flex-start">
+      {/* Comments - 1/3 */}
+      <Box sx={{ width: { xs: '100%', md: '33.33%' } }}>
+        <Typography variant="subtitle1" gutterBottom>
+          Commentaires
+        </Typography>
+
+        <Stack spacing={2}>
+          <TextField
+            fullWidth
+            multiline
+            minRows={2}
+            placeholder="Ajouter un commentaire..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+          />
+          <Button
+            variant="contained"
+            size="small"
+            onClick={async () => {
+              if (!newComment.trim() || !selectedTask) return;
+              try {
+                const res = await axios.post(
+                  `${process.env.NEXT_PUBLIC_API_URL}/auth/tasks/${selectedTask.id}/comments/`,
+                  {
+                    content: newComment,
+                    author: 'Admin',
+                  }
+                );
+                setComments((prev) => [res.data, ...prev]);
+                setNewComment('');
+              } catch {
+                showMessage("Erreur lors de l'ajout du commentaire", 'error');
+              }
+            }}
+          >
+            Envoyer
+          </Button>
+          {comments.length === 0 && (
+            <Typography color="text.secondary">Aucun commentaire</Typography>
+          )}
+          {comments.map((comment) => (
+          <Paper key={comment.id} variant="outlined" sx={{ p: 1.5, position: 'relative' }}>
+            <IconButton
+              size="small"
+              onClick={async () => {
+                try {
+                  await axios.delete(
+                    `${process.env.NEXT_PUBLIC_API_URL}/auth/tasks/${selectedTask.id}/comments/${comment.id}/`
+                  );
+                  setComments((prev) => prev.filter((c) => c.id !== comment.id));
+                  showMessage('Commentaire supprimé', 'success');
+                } catch {
+                  showMessage('Erreur lors de la suppression', 'error');
+                }
+              }}
+              sx={{ position: 'absolute', top: 8, right: 8 }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+
+            <Typography variant="body2" fontWeight="bold">
+              {comment.author}
+            </Typography>
+            <Typography variant="body2">{comment.content}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {new Date(comment.created_at).toLocaleString('fr-FR')}
+            </Typography>
+          </Paper>
+          ))}
+
+
+
+        </Stack>
+      </Box>
+
+      {/* Documents - 2/3 */}
+      <Box sx={{ width: { xs: '100%', md: '66.66%' } }}>
+        <Typography variant="subtitle1" gutterBottom>
+          Documents attachés
+        </Typography>
+
+        <DataGrid
+rows={taskDocuments}
+columns={[
+{
+  field: 'file',
+  headerName: 'Document',
+  flex: 1,
+  renderCell: (params) => (
+    <Stack direction="row" alignItems="center" spacing={1}>
+      {getFileIcon(params.row.file)}
+      <Button
+        variant="text"
+        color="primary"
+        onClick={() => openPdfViewer(params.row.id)}
+      >
+        Voir
+      </Button>
+    </Stack>
+  ),
+},
+{
+field: 'uploaded_at',
+headerName: 'Date',
+width: 180,
+valueFormatter: (params: GridCellParams) =>
+  params.value
+    ? new Date(params.value as string).toLocaleString('fr-FR')
+    : '',
+}
+,
+{
+  field: 'download',
+  headerName: 'Télécharger',
+  width: 150,
+  renderCell: (params) => (
+    <Button
+variant="text"
+color="secondary"
+onClick={() => downloadDocument(params.row.id, params.row.file_name)}
+>
+Télécharger
+</Button>
+
+  ),
+},
+]}
+autoHeight
+getRowId={(row) => row.id}
+/>
+        {typeof window !== 'undefined' && localStorage.getItem('can_write') === 'true' && (
+<Button
+component="label"
+variant="outlined"
+startIcon={<CloudUploadIcon />}
+>
+Ajouter un fichier
+<input
+  hidden
+  type="file"
+  onChange={async (e) => {
+    if (!e.target.files?.[0] || !selectedTask) return;
+    const formData = new FormData();
+    formData.append('file', e.target.files[0]);
+    try {
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/tasks/${selectedTask.id}/documents/`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/tasks/${selectedTask.id}/documents/`
+      );
+      setTaskDocuments(res.data);
+      showMessage('Fichier téléchargé avec succès', 'success');
+    } catch {
+      showMessage('Erreur lors du téléchargement du fichier', 'error');
+    }
+  }}
+/>
+</Button>
+)}
+
+      </Box>
+    </Stack>
+  </Stack>
+) : (
+  <Typography>Chargement...</Typography>
+)}
+</DialogContent>
+
+<DialogActions>
+<Button onClick={() => setTaskDetailsDialogOpen(false)} color="primary">
+  Fermer
+</Button>
+</DialogActions>
+  </Dialog>
+  <Snackbar
+    open={snackbar.open}
+    autoHideDuration={3000}
+    onClose={() => setSnackbar({ ...snackbar, open: false })}
+  >
+    <Alert severity={snackbar.severity as any} sx={{ width: '100%' }}>
+      {snackbar.message}
+    </Alert>
+  </Snackbar>
+
+
   </main>
 );
 }
