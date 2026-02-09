@@ -5,7 +5,7 @@ from .views import (
     RegisterView, LoginView, LogoutView,UserListView,UpdateUserPermissionsView,UserDeleteView,
     FoncierListCreateView, FoncierDetailView,
     StepCreateView, TaskCreateView, FoncierStepsView,StepDetailUpdateView,CurrentUserView,ChatUserListView,
-    TaskDocumentUploadView,FoncierDeleteAllView,UsageListCreateView,TaskDocumentByteView,TaskCommentsView,FoncierStatisticsView,FoncierWilayaStatsView,EventListCreateView, FoncierAISummaryView,EventDeleteView,TaskUserRemoveView,UnreadMessageCountView,TaskDeleteView,ChatMessageListView,ChatUserListView, CurrentUserView, SendMessageView,CurrentUserView,EventUpdateView,Message1ListCreateView,TaskUpdateView,HistoriqueListCreateView
+    TaskDocumentUploadView,FoncierDeleteAllView,UsageListCreateView,TaskDocumentByteView,DocumentDownloadView,TaskCommentsView,FoncierStatisticsView,FoncierWilayaStatsView,EventListCreateView, FoncierAISummaryView,EventDeleteView,TaskUserRemoveView,UnreadMessageCountView,TaskDeleteView,ChatMessageListView,ChatUserListView, CurrentUserView, SendMessageView,CurrentUserView,EventUpdateView,Message1ListCreateView,TaskUpdateView,HistoriqueListCreateView
 )
 from .views import download_document
 
@@ -65,6 +65,11 @@ urlpatterns = [
 
     path('usages/', UsageListCreateView.as_view(), name='usages-list'),
     path("fonciers/delete-all/", FoncierDeleteAllView.as_view()),
+    path(
+        'documents/<int:document_id>/download/<str:file_type>/',
+        DocumentDownloadView.as_view(),
+        name='download_document'
+    ),
 ]
 
 
