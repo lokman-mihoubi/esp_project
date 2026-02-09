@@ -169,14 +169,72 @@ class FoncierSerializer(serializers.ModelSerializer):
     class Meta:
         model = Foncier
         fields = "__all__"
+        read_only_fields = ['id']
+        
+      # URLs des fichiers pour prévisualisation
+    duac_file_bytes = serializers.SerializerMethodField()
+    dccf_file_bytes = serializers.SerializerMethodField()
+    domaine_file_bytes = serializers.SerializerMethodField()
 
+    def _file_to_base64(self, file):
+        if not file:
+            return None
+
+        mime_type, _ = mimetypes.guess_type(file.name)
+        if not mime_type:
+            mime_type = "application/pdf"
+
+        with file.open("rb") as f:
+            encoded = base64.b64encode(f.read()).decode("utf-8")
+            data_url = f"data:{mime_type};base64,{encoded}"
+
+            # 🔍 DEBUG: print the first 100 characters to avoid huge logs
+            print(f"🧪 FILE BYTES PREVIEW ({file.name}): {data_url[:100]}...")
+
+            return data_url
+
+
+
+    def get_duac_file_bytes(self, obj):
+        return self._file_to_base64(obj.duac_file)
+
+    def get_dccf_file_bytes(self, obj):
+        return self._file_to_base64(obj.dccf_file)
+
+    def get_domaine_file_bytes(self, obj):
+        return self._file_to_base64(obj.domaine_file)
+
+    
+    
+
+    def get_duac_file_bytes(self, obj):
+        data = self._file_to_base64(obj.duac_file)
+        print("🧪 DUAC BYTES PREVIEW:", data[:100] if data else None)
+        return data
+
+
+    def get_dccf_file_bytes(self, obj):
+        return self._file_to_base64(obj.dccf_file)
+
+    def get_domaine_file_bytes(self, obj):
+        return self._file_to_base64(obj.domaine_file)
     # --------------------------------------------------
     # 🔥 FORCE REGION FROM WILAYA (GUARANTEED)
     # --------------------------------------------------
     def create(self, validated_data):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+
+        # Region from profile
+        profile = getattr(user, "profile", None)
+        if profile and profile.abrv_str:
+            validated_data["region"] = profile.abrv_str
+
+        # Region from wilaya (override if needed)
         wilaya = validated_data.get("wilaya")
         if wilaya:
             validated_data["region"] = WILAYA_TO_REGION.get(str(wilaya).zfill(2), "DG")
+
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
@@ -184,7 +242,16 @@ class FoncierSerializer(serializers.ModelSerializer):
         if wilaya:
             validated_data["region"] = WILAYA_TO_REGION.get(str(wilaya).zfill(2), "DG")
         return super().update(instance, validated_data)
-
+        
+    def validate(self, data):
+        # Prevent checkboxes without files
+        if data.get('is_confirmed_by_duac') and not data.get('duac_file'):
+            data['is_confirmed_by_duac'] = False
+        if data.get('is_confirmed_by_DCCF') and not data.get('dccf_file'):
+            data['is_confirmed_by_DCCF'] = False
+        if data.get('is_confirmed_by_Domaine') and not data.get('domaine_file'):
+            data['is_confirmed_by_Domaine'] = False
+        return data
     # --------------------------------------------------
     # EXTRA FIELDS
     # --------------------------------------------------
