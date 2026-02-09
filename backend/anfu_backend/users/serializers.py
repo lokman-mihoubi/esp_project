@@ -152,7 +152,8 @@ WILAYA_TO_REGION = {
     "08": "DRSO", "45": "DRSO", "32": "DRSO",
 }
 
-
+import base64
+import mimetypes
 class FoncierSerializer(serializers.ModelSerializer):
     geojson_data = serializers.SerializerMethodField()
     predicted_surface = serializers.SerializerMethodField()
