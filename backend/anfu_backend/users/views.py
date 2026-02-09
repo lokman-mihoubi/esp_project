@@ -274,6 +274,48 @@ class FoncierListCreateView(APIView):
 
         return Response(serializer.errors, status=400)
 
+
+import mimetypes
+from django.http import HttpResponse, JsonResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.clickjacking import xframe_options_exempt
+
+@method_decorator(xframe_options_exempt, name='dispatch')
+class DocumentDownloadView(APIView):
+    """
+    Serve a Foncier file by type.
+    URL: /auth/documents/<document_id>/download/<file_type>/
+    """
+    def get(self, request, document_id, file_type):  # <- type comes from path
+        try:
+            foncier = Foncier.objects.get(id=document_id)
+
+            if file_type == 'duac' and foncier.duac_file:
+                file_field = foncier.duac_file
+            elif file_type == 'dccf' and foncier.dccf_file:
+                file_field = foncier.dccf_file
+            elif file_type == 'domaine' and foncier.domaine_file:
+                file_field = foncier.domaine_file
+            else:
+                return JsonResponse({"error": f"File '{file_type}' not found"}, status=404)
+
+            # Read the file
+            with file_field.open("rb") as f:
+                file_bytes = f.read()
+
+            mime_type, _ = mimetypes.guess_type(file_field.name)
+            if not mime_type:
+                mime_type = "application/octet-stream"
+
+            response = HttpResponse(file_bytes, content_type=mime_type)
+            response['Content-Disposition'] = f'inline; filename="{file_field.name}"'
+            return response
+
+        except Foncier.DoesNotExist:
+            return JsonResponse({"error": "Document not found"}, status=404)
+
+
+
 class FoncierDeleteAllView(APIView):
     permission_classes = [IsAuthenticated]
 
