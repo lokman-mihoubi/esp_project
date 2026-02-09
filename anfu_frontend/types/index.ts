@@ -55,6 +55,22 @@ export type Foncier = {
   is_confirmed_by_duac?: boolean | null;
   is_confirmed_by_DCCF?: boolean | null;
   is_confirmed_by_Domaine?: boolean | null;
+
+  duac_file?: File | null;
+  duac_file_bytes?: string | null;
+
+  dccf_file?: File | null;
+  dccf_file_bytes?: string | null;
+
+  domaine_file?: File | null;
+  domaine_file_bytes?: string | null;
+
+
+
+  duac_file_url?: string | null;
+  dccf_file_url?: string | null;
+  domaine_file_url?: string | null;
+  
   type?: FoncierType;
 };
 
