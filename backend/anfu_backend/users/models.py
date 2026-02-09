@@ -233,7 +233,19 @@ class Foncier(models.Model):
     region = models.CharField(max_length=5,choices=REGION_CHOICES,blank=True,null=True    
     )
         
-        
+        # ---------------- CONFIRMATION FILES ----------------
+    def duac_upload_to(instance, filename):
+        return f"duac_files/{instance.code}_{filename}"
+
+    def dccf_upload_to(instance, filename):
+        return f"dccf_files/{instance.code}_{filename}"
+
+    def domaine_upload_to(instance, filename):
+        return f"domaine_files/{instance.code}_{filename}"
+
+    duac_file = models.FileField(upload_to=duac_upload_to, blank=True, null=True)
+    dccf_file = models.FileField(upload_to=dccf_upload_to, blank=True, null=True)
+    domaine_file = models.FileField(upload_to=domaine_upload_to, blank=True, null=True)    
         
     
     # ✅ NEW CONFIRMATION FIELDS (nullable)
@@ -254,6 +266,31 @@ class Foncier(models.Model):
         null=True,
         help_text="Confirmé par le Domaine ?"
     )
+    
+    # ---------------- CLEAN METHOD ----------------
+    def clean(self):
+        allowed_extensions = ['pdf', 'jpg', 'jpeg', 'png']
+
+        files = {
+            'duac_file': self.duac_file,
+            'dccf_file': self.dccf_file,
+            'domaine_file': self.domaine_file
+        }
+
+        for field_name, file in files.items():
+            if file:
+                ext = file.name.split('.')[-1].lower()
+                if ext not in allowed_extensions:
+                    raise ValidationError({field_name: f"Fichier invalide pour {field_name}: .{ext}. Autorisé: {allowed_extensions}"})
+
+        # Prevent checkbox without file
+        if self.is_confirmed_by_duac and not self.duac_file:
+            self.is_confirmed_by_duac = False
+        if self.is_confirmed_by_DCCF and not self.dccf_file:
+            self.is_confirmed_by_DCCF = False
+        if self.is_confirmed_by_Domaine and not self.domaine_file:
+            self.is_confirmed_by_Domaine = False
+    
     def __str__(self):
         return f"{self.code or 'NO_CODE'} - {self.commune}"
 
