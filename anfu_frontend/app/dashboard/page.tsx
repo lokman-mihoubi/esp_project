@@ -7,7 +7,8 @@ import { User, Foncier, Document, Task, StepType,Usage  } from '@/types';
 
 import {Box,TextField,Button,Stack,Typography,Snackbar,Alert,Dialog,DialogTitle,
   DialogContent,DialogActions,IconButton,Stepper,Step,StepLabel,LinearProgress} from '@mui/material';
-
+import UndoIcon from "@mui/icons-material/Undo";
+import DocumentViewButton from "@/components/DocumentViewButton";
 import { Checkbox, FormControlLabel ,ListSubheader,Tooltip} from '@mui/material';
 
 import FoncierStatistics from '@/components/FoncierStatistics';
@@ -58,30 +59,48 @@ export default function DashboardPage() {
   const [rows, setRows] = useState<Foncier[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [newItem, setNewItem] = useState<Omit<Foncier, 'id'>>({
-    code:'',
-    commune:'',
-    description: '',
-    coordinates: '',
-    coordinates_dms: '',
-    wilaya: '',
-    geojson_file: null,
-    usage: 'lgmts',
-    progress_viabilisation: 0,
-    surface: 0,
-    is_transmis: false,
-    date_transmission: null,
-    is_completed: false,
-    is_published:false,
-    is_favorited:false,
-    POS: '',
-    Ref_Cadastre_Section: '',
-    Ref_Cadastre_Ilot: '',
-    // ✅ NEW CONFIRMATION FIELDS
-    is_confirmed_by_duac: null ,
-    is_confirmed_by_DCCF: null,
-    is_confirmed_by_Domaine: null,
-  });
+  const [newItem, setNewItem] = useState<Omit<Foncier, 'id'> & { id?: number }>({
+  id: undefined,  // optional id
+  code: '',
+  commune: '',
+  description: '',
+  coordinates: '',
+  coordinates_dms: '',
+  wilaya: '',
+  geojson_file: null,
+  usage: null,
+  progress_viabilisation: 0,
+  surface: 0,
+  is_transmis: false,
+  date_transmission: null,
+  is_completed: false,
+  is_published: false,
+  is_favorited: false,
+  POS: '',
+  Ref_Cadastre_Section: '',
+  Ref_Cadastre_Ilot: '',
+  region: localStorage.getItem("abrv_str") || "DG",
+
+  // ✅ Fichiers locaux
+  duac_file: null,
+  dccf_file: null,
+  domaine_file: null,
+
+  // ✅ Fichiers en bytes pour prévisualisation
+  duac_file_bytes: null,
+  dccf_file_bytes: null,
+  domaine_file_bytes: null,
+
+  // ✅ Fichiers déjà uploadés sur serveur
+  duac_file_url: null,
+  dccf_file_url: null,
+  domaine_file_url: null,
+
+  // ✅ CONFIRMATION FIELDS
+  is_confirmed_by_duac: null,
+  is_confirmed_by_DCCF: null,
+  is_confirmed_by_Domaine: null,
+});
   useEffect(() => {
   const duac = newItem.is_confirmed_by_duac === true;
   const dccf = newItem.is_confirmed_by_DCCF === true;
@@ -447,7 +466,27 @@ const handleAdd = async () => {
       return;
     }
 
+    // ================= VALIDATIONS CONFIRMATIONS =================
+    if (newItem.is_confirmed_by_duac && !newItem.duac_file) {
+      showMessage("Veuillez joindre le fichier DUAC avant confirmation", "error");
+      return;
+    }
+
+    if (newItem.is_confirmed_by_DCCF && !newItem.dccf_file) {
+      showMessage("Veuillez joindre le fichier DCCF avant confirmation", "error");
+      return;
+    }
+
+    if (newItem.is_confirmed_by_Domaine && !newItem.domaine_file) {
+      showMessage("Veuillez joindre le fichier Domaine avant confirmation", "error");
+      return;
+    }
+
+    // ❗ is_completed (mobilisé) is NOT blocked by confirmations
+
     const formData = new FormData();
+
+    // ================= BASIC FIELDS =================
     formData.append("code", newItem.code || "");
     formData.append("commune", newItem.commune || "");
     formData.append("description", newItem.description || "");
@@ -455,34 +494,63 @@ const handleAdd = async () => {
     formData.append("coordinates_dms", newItem.coordinates_dms || "");
     formData.append("type", selectedType);
     formData.append("wilaya", newItem.wilaya || "");
-    formData.append("usage", newItem.usage || "");
+    
+
+    const region = localStorage.getItem("abrv_str") || "DG";
+    formData.append("region", region);
+
+    if (newItem.usage?.id) {
+      formData.append("usage_id", String(newItem.usage.id));
+    }
+
     formData.append("progress_viabilisation", String(newItem.progress_viabilisation || 0));
     formData.append("surface", String(newItem.surface || 0));
     formData.append("POS", newItem.POS || "");
     formData.append("Ref_Cadastre_Section", newItem.Ref_Cadastre_Section || "");
     formData.append("Ref_Cadastre_Ilot", newItem.Ref_Cadastre_Ilot || "");
 
+    // ================= STATUS FLAGS =================
     formData.append("is_completed", String(newItem.is_completed ?? false));
     formData.append("is_published", String(newItem.is_published ?? false));
     formData.append("is_favorited", String(newItem.is_favorited ?? false));
     formData.append("is_transmis", String(newItem.is_transmis ?? false));
 
-    // date_transmission uniquement si transmis
     if (newItem.is_transmis && newItem.date_transmission) {
       formData.append("date_transmission", newItem.date_transmission);
     }
 
-    // GeoJSON si présent
+    // ================= FILES =================
     if (newItem.geojson_file) {
       formData.append("geojson_file", newItem.geojson_file);
     }
 
-    // ----------------- CONFIRMATIONS MANUELLES -----------------
-    formData.append("is_confirmed_by_duac", String(newItem.is_confirmed_by_duac ?? false));
-    formData.append("is_confirmed_by_DCCF", String(newItem.is_confirmed_by_DCCF ?? false));
-    formData.append("is_confirmed_by_Domaine", String(newItem.is_confirmed_by_Domaine ?? false));
+    if (newItem.duac_file) {
+      formData.append("duac_file", newItem.duac_file);
+    }
 
-    // ----------------- ENVOI AU BACKEND -----------------
+    if (newItem.dccf_file) {
+      formData.append("dccf_file", newItem.dccf_file);
+    }
+
+    if (newItem.domaine_file) {
+      formData.append("domaine_file", newItem.domaine_file);
+    }
+
+    // ================= CONFIRMATIONS =================
+    formData.append(
+      "is_confirmed_by_duac",
+      String(newItem.is_confirmed_by_duac ?? false)
+    );
+    formData.append(
+      "is_confirmed_by_DCCF",
+      String(newItem.is_confirmed_by_DCCF ?? false)
+    );
+    formData.append(
+      "is_confirmed_by_Domaine",
+      String(newItem.is_confirmed_by_Domaine ?? false)
+    );
+
+    // ================= API CALL =================
     const headers = {
       "Content-Type": "multipart/form-data",
       Authorization: `Bearer ${accessToken}`,
@@ -504,7 +572,7 @@ const handleAdd = async () => {
       showMessage("Foncier ajouté avec succès", "success");
     }
 
-    // ----------------- RESET FORM -----------------
+    // ================= RESET =================
     setDialogOpen(false);
     setNewItem({
       code: "",
@@ -513,8 +581,11 @@ const handleAdd = async () => {
       coordinates: "",
       coordinates_dms: "",
       geojson_file: null,
+      duac_file: null,
+      dccf_file: null,
+      domaine_file: null,
       wilaya: "",
-      usage: "lgmts",
+      usage: null,
       progress_viabilisation: 0,
       surface: 0,
       is_transmis: false,
@@ -530,16 +601,19 @@ const handleAdd = async () => {
       is_confirmed_by_DCCF: false,
       is_confirmed_by_Domaine: false,
     });
+
     setIsEdit(false);
     setSelectedFoncierId(null);
     fetchFonciers();
 
   } catch (error: any) {
     console.error(error.response || error);
-    showMessage(isEdit ? "Échec de la mise à jour" : "Échec de l’ajout", "error");
+    showMessage(
+      isEdit ? "Échec de la mise à jour" : "Échec de l’ajout",
+      "error"
+    );
   }
 };
-
 
 
 
@@ -588,7 +662,14 @@ const openPdfViewer = async (documentId: number) => {
   }
 };
 
-
+const confirmationBoxStyle = {
+  border: "1px dashed #c4c4c4",
+  borderRadius: 2,
+  padding: 1,
+  display: "flex",
+  flexDirection: "column",
+  gap: 1.5,
+};
 const handleDeleteAll = async () => {
   const confirmDelete = window.confirm(
     "⚠️ Cette action supprimera tous les fonciers. Continuer ?"
@@ -1969,37 +2050,196 @@ getRowId={(row) => row.id}
       sx={{ flex: "1 1 45%" }}
     />
 
-    {/* Confirmations */}
-    <FormControlLabel
-      control={
-        <Checkbox
-          checked={newItem.is_confirmed_by_duac || false}
-          disabled={!canEditNormalFields}
-          onChange={(e) => setNewItem({ ...newItem, is_confirmed_by_duac: e.target.checked })}
-        />
-      }
-      label="Confirmé par DUAC"
+    
+    
+      {/* Confirmations */}
+ 
+<Box sx={confirmationBoxStyle}>
+  <Typography fontWeight={600}>DUAC</Typography>
+
+  <Button component="label" variant="outlined" fullWidth>
+    Joindre fichier DUAC (PDF)
+    <input
+      hidden
+      type="file"
+      accept="application/pdf"
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setNewItem(prev => ({
+          ...prev,
+          duac_file: file,
+          duac_file_bytes: null, // optional: remove base64
+          is_confirmed_by_duac: true,
+        }));
+      }}
     />
-    <FormControlLabel
-      control={
-        <Checkbox
-          checked={newItem.is_confirmed_by_DCCF || false}
-          disabled={!canEditNormalFields}
-          onChange={(e) => setNewItem({ ...newItem, is_confirmed_by_DCCF: e.target.checked })}
-        />
+  </Button>
+
+ {newItem.id && newItem.duac_file && (
+  <DocumentViewButton
+    documentId={newItem.id}
+    fileType="duac"
+    label="Voir DUAC"
+  />
+)}
+
+
+
+
+
+  <FormControlLabel
+    control={
+      <Checkbox
+        checked={!!newItem.is_confirmed_by_duac}
+        disabled={!newItem.duac_file}
+      />
+    }
+    label="Confirmé par DUAC"
+  />
+
+  {newItem.duac_file && (
+    <Button
+      color="error"
+      size="small"
+      onClick={() =>
+        setNewItem(prev => ({
+          ...prev,
+          duac_file: null,
+          duac_file_bytes: null,
+          is_confirmed_by_duac: false,
+        }))
       }
-      label="Confirmé par DCCF"
+    >
+      Supprimer fichier DUAC
+    </Button>
+  )}
+</Box>
+
+{/* Repeat the same for DCCF */}
+<Box sx={confirmationBoxStyle}>
+  <Typography fontWeight={600}>DCCF</Typography>
+
+  <Button component="label" variant="outlined" fullWidth>
+    Joindre fichier DCCF (PDF)
+    <input
+      hidden
+      type="file"
+      accept="application/pdf"
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setNewItem(prev => ({
+          ...prev,
+          dccf_file: file,
+          dccf_file_bytes: null,
+          is_confirmed_by_DCCF: true,
+        }));
+      }}
     />
-    <FormControlLabel
-      control={
-        <Checkbox
-          checked={newItem.is_confirmed_by_Domaine || false}
-          disabled={!canEditNormalFields}
-          onChange={(e) => setNewItem({ ...newItem, is_confirmed_by_Domaine: e.target.checked })}
-        />
+  </Button>
+
+ {newItem.id && newItem.dccf_file && (
+  <DocumentViewButton
+    documentId={newItem.id}
+    fileType="dccf"
+    label="Voir DCCF"
+  />
+)}
+
+
+
+
+  <FormControlLabel
+    control={
+      <Checkbox
+        checked={!!newItem.is_confirmed_by_DCCF}
+        disabled={!newItem.dccf_file}
+      />
+    }
+    label="Confirmé par DCCF"
+  />
+
+  {newItem.dccf_file && (
+    <Button
+      size="small"
+      color="error"
+      onClick={() =>
+        setNewItem(prev => ({
+          ...prev,
+          dccf_file: null,
+          dccf_file_bytes: null,
+          is_confirmed_by_DCCF: false,
+        }))
       }
-      label="Confirmé par Domaine"
+    >
+      Supprimer fichier DCCF
+    </Button>
+  )}
+</Box>
+
+{/* Repeat the same for Domaine */}
+<Box sx={confirmationBoxStyle}>
+  <Typography fontWeight={600}>Domaine / Cadastre</Typography>
+
+  <Button component="label" variant="outlined" fullWidth>
+    Joindre fichier Domaine (PDF)
+    <input
+      hidden
+      type="file"
+      accept="application/pdf"
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setNewItem(prev => ({
+          ...prev,
+          domaine_file: file,
+          domaine_file_bytes: null,
+          is_confirmed_by_Domaine: true,
+        }));
+      }}
     />
+  </Button>
+
+{newItem.id && newItem.domaine_file && (
+  <DocumentViewButton
+    documentId={newItem.id}
+    fileType="domaine"
+    label="Voir Domaine"
+  />
+)}
+
+  <FormControlLabel
+    control={
+      <Checkbox
+        checked={!!newItem.is_confirmed_by_Domaine}
+        disabled={!newItem.domaine_file}
+      />
+    }
+    label="Confirmé par Domaine"
+  />
+
+  {newItem.domaine_file && (
+    <Button
+      size="small"
+      color="error"
+      onClick={() =>
+        setNewItem(prev => ({
+          ...prev,
+          domaine_file: null,
+          domaine_file_bytes: null,
+          is_confirmed_by_Domaine: false,
+        }))
+      }
+    >
+      Supprimer fichier Domaine
+    </Button>
+  )}
+</Box>
+
 
     {/* Completed (User only) */}
     <FormControlLabel
