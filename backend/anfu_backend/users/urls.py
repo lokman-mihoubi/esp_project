@@ -4,7 +4,7 @@ from .views import RegisterView, LoginView, LogoutView,UserRoleUpdateView
 from .views import (
     RegisterView, LoginView, LogoutView,UserListView,UpdateUserPermissionsView,UserDeleteView,
     FoncierListCreateView, FoncierDetailView,
-    StepCreateView, TaskCreateView, FoncierStepsView,StepDetailUpdateView,CurrentUserView,ChatUserListView,
+    StepCreateView, TaskCreateView, FoncierStepsView,StepDetailUpdateView,CurrentUserView,FoncierListCreateUpdateView,ChatUserListView,
     TaskDocumentUploadView,FoncierDeleteAllView,UsageListCreateView,TaskDocumentByteView,DocumentDownloadView,TaskCommentsView,FoncierStatisticsView,FoncierWilayaStatsView,EventListCreateView, FoncierAISummaryView,EventDeleteView,TaskUserRemoveView,UnreadMessageCountView,TaskDeleteView,ChatMessageListView,ChatUserListView, CurrentUserView, SendMessageView,CurrentUserView,EventUpdateView,Message1ListCreateView,TaskUpdateView,HistoriqueListCreateView
 )
 from .views import download_document
@@ -19,7 +19,7 @@ urlpatterns = [
     path("users/<int:pk>/permissions/", UpdateUserPermissionsView.as_view(), name="update-user-permissions"),
 
     path('fonciers/', FoncierListCreateView.as_view(), name='foncier-list-create'),
-    path("/fonciers/<int:pk>/", FoncierListCreateUpdateView.as_view()),  # PATCH
+    path('fonciers/<int:pk>/', FoncierListCreateUpdateView.as_view(), name='foncier-update'),
     path('fonciers/<int:pk>/', FoncierDetailView.as_view(), name='foncier-detail'),
 
     # path('fonciers/<int:foncier_id>/steps/', StepCreateView.as_view(), name='step-create'),
