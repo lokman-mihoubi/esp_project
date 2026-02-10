@@ -212,23 +212,17 @@ from .serializers import FoncierSerializer
 
 
 from rest_framework.views import APIView
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.permissions import IsAuthenticated
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime
+
 from .models import Foncier, Usage
 from .serializers import FoncierSerializer
 
-
-class FoncierListCreateUpdateView(APIView):
-    """
-    Handles:
-    - GET: list fonciers (with optional region/type filter)
-    - POST: create new foncier
-    - PATCH: update existing foncier
-    """
+class FoncierListCreateView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     permission_classes = [IsAuthenticated]
 
@@ -237,8 +231,6 @@ class FoncierListCreateUpdateView(APIView):
         qs = Foncier.objects.all()
 
         profile = getattr(request.user, "profile", None)
-
-        # Apply region filter if not DG
         if profile and profile.abrv_str and profile.abrv_str != "DG":
             qs = qs.filter(region=profile.abrv_str)
 
@@ -249,27 +241,10 @@ class FoncierListCreateUpdateView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        return self._save_foncier(request)
-
-    def patch(self, request, pk=None):
-        if not pk:
-            return Response({"detail": "Foncier ID required"}, status=400)
-
-        try:
-            foncier = Foncier.objects.get(pk=pk)
-        except Foncier.DoesNotExist:
-            return Response({"detail": "Not found"}, status=404)
-
-        return self._save_foncier(request, instance=foncier)
-
-    def _save_foncier(self, request, instance=None):
-        """
-        Shared logic for POST (create) and PATCH (update)
-        """
-        # Flatten form data
+        # Flatten data
         flat_data = {k: v[0] if isinstance(v, list) else v for k, v in request.data.items()}
 
-        # Convert decimal
+        # Convert numeric fields
         if "surface" in flat_data:
             try:
                 flat_data["surface"] = Decimal(str(flat_data["surface"])).quantize(
@@ -278,14 +253,13 @@ class FoncierListCreateUpdateView(APIView):
             except:
                 flat_data["surface"] = None
 
-        # Convert booleans
+        # Convert boolean fields
         for field in ["is_transmis", "is_completed", "is_published", "is_favorited",
                       "is_confirmed_by_duac", "is_confirmed_by_DCCF", "is_confirmed_by_Domaine"]:
             v = flat_data.get(field)
-            if v is not None:
-                flat_data[field] = str(v).lower() in ["true", "1", "oui", "yes"]
+            flat_data[field] = str(v).lower() in ["true", "1", "oui", "yes"]
 
-        # Handle date
+        # Convert date
         if flat_data.get("date_transmission"):
             try:
                 flat_data["date_transmission"] = datetime.strptime(
@@ -301,13 +275,72 @@ class FoncierListCreateUpdateView(APIView):
             usage, _ = Usage.objects.get_or_create(name=usage_value)
             flat_data["usage"] = usage
 
-        # Serializer
-        serializer = FoncierSerializer(instance, data=flat_data, partial=True if instance else False)
-
+        serializer = FoncierSerializer(data=flat_data)
         if serializer.is_valid():
             foncier = serializer.save()
-            return Response(FoncierSerializer(foncier).data, status=status.HTTP_200_OK if instance else 201)
+            return Response(FoncierSerializer(foncier).data, status=201)
+        return Response(serializer.errors, status=400)
 
+
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from decimal import Decimal, ROUND_HALF_UP
+from datetime import datetime
+
+from .models import Foncier, Usage
+from .serializers import FoncierSerializer
+
+class FoncierListCreateUpdateView(APIView):
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        try:
+            foncier = Foncier.objects.get(pk=pk)
+        except Foncier.DoesNotExist:
+            return Response({"detail": "Not found."}, status=404)
+
+        flat_data = {k: v[0] if isinstance(v, list) else v for k, v in request.data.items()}
+
+        # Convert numeric fields
+        if "surface" in flat_data:
+            try:
+                flat_data["surface"] = Decimal(str(flat_data["surface"])).quantize(
+                    Decimal("0.000001"), rounding=ROUND_HALF_UP
+                )
+            except:
+                flat_data["surface"] = None
+
+        # Convert boolean fields
+        for field in ["is_transmis", "is_completed", "is_published", "is_favorited",
+                      "is_confirmed_by_duac", "is_confirmed_by_DCCF", "is_confirmed_by_Domaine"]:
+            v = flat_data.get(field)
+            if v is not None:
+                flat_data[field] = str(v).lower() in ["true", "1", "oui", "yes"]
+
+        # Convert date
+        if flat_data.get("date_transmission"):
+            try:
+                flat_data["date_transmission"] = datetime.strptime(
+                    flat_data["date_transmission"], "%Y-%m-%d"
+                ).date()
+                flat_data["is_transmis"] = True
+            except:
+                flat_data["date_transmission"] = None
+
+        # Handle usage
+        usage_value = flat_data.pop("usage", None)
+        if usage_value:
+            usage, _ = Usage.objects.get_or_create(name=usage_value)
+            flat_data["usage"] = usage
+
+        serializer = FoncierSerializer(foncier, data=flat_data, partial=True)
+        if serializer.is_valid():
+            foncier = serializer.save()
+            return Response(FoncierSerializer(foncier).data, status=200)
         return Response(serializer.errors, status=400)
 
 
