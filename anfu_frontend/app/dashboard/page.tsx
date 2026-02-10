@@ -460,65 +460,72 @@ useEffect(() => {
 
 const handleAdd = async () => {
   try {
+    // ================= AUTH CHECK =================
     const accessToken = localStorage.getItem("access");
     if (!accessToken) {
       showMessage("Vous n'êtes pas authentifié", "error");
       return;
     }
 
-    // ================= VALIDATIONS CONFIRMATIONS =================
+    // ================= VALIDATIONS =================
     if (newItem.is_confirmed_by_duac && !newItem.duac_file) {
       showMessage("Veuillez joindre le fichier DUAC avant confirmation", "error");
       return;
     }
+
     if (newItem.is_confirmed_by_DCCF && !newItem.dccf_file) {
       showMessage("Veuillez joindre le fichier DCCF avant confirmation", "error");
       return;
     }
+
     if (newItem.is_confirmed_by_Domaine && !newItem.domaine_file) {
       showMessage("Veuillez joindre le fichier Domaine avant confirmation", "error");
       return;
     }
 
-    // ================= BUILD FORM DATA =================
+    // ================= CREATE FORM DATA =================
     const formData = new FormData();
 
     // Basic fields
-    const basicFields = [
-      "code", "commune", "description", "coordinates", "coordinates_dms",
-      "wilaya", "POS", "Ref_Cadastre_Section", "Ref_Cadastre_Ilot"
-    ];
-    basicFields.forEach(field => {
-      formData.append(field, (newItem as any)[field] || "");
-    });
-
-    formData.append("type", selectedType);
+    formData.append("code", newItem.code || "");
+    formData.append("commune", newItem.commune || "");
+    formData.append("description", newItem.description || "");
+    formData.append("coordinates", newItem.coordinates || "");
+    formData.append("coordinates_dms", newItem.coordinates_dms || "");
+    formData.append("type", selectedType || "");
+    formData.append("wilaya", newItem.wilaya || "");
     formData.append("region", localStorage.getItem("abrv_str") || "DG");
-    formData.append("progress_viabilisation", String(newItem.progress_viabilisation || 0));
+    formData.append("POS", newItem.POS || "");
+    formData.append("Ref_Cadastre_Section", newItem.Ref_Cadastre_Section || "");
+    formData.append("Ref_Cadastre_Ilot", newItem.Ref_Cadastre_Ilot || "");
     formData.append("surface", String(newItem.surface || 0));
-    formData.append("usage", newItem.usage || "");
+    formData.append("progress_viabilisation", String(newItem.progress_viabilisation || 0));
 
     // Status flags
-    const statusFlags = [
-      "is_completed", "is_published", "is_favorited", "is_transmis",
-      "is_confirmed_by_duac", "is_confirmed_by_DCCF", "is_confirmed_by_Domaine"
-    ];
-    statusFlags.forEach(flag => {
-      formData.append(flag, String((newItem as any)[flag] ?? false));
-    });
+    formData.append("is_completed", String(newItem.is_completed ?? false));
+    formData.append("is_published", String(newItem.is_published ?? false));
+    formData.append("is_favorited", String(newItem.is_favorited ?? false));
+    formData.append("is_transmis", String(newItem.is_transmis ?? false));
 
-    // Transmission date
     if (newItem.is_transmis && newItem.date_transmission) {
       formData.append("date_transmission", newItem.date_transmission);
     }
 
+    // Confirmations
+    formData.append("is_confirmed_by_duac", String(newItem.is_confirmed_by_duac ?? false));
+    formData.append("is_confirmed_by_DCCF", String(newItem.is_confirmed_by_DCCF ?? false));
+    formData.append("is_confirmed_by_Domaine", String(newItem.is_confirmed_by_Domaine ?? false));
+
     // Files
-    const fileFields = ["geojson_file", "duac_file", "dccf_file", "domaine_file"];
-    fileFields.forEach(file => {
-      if ((newItem as any)[file]) {
-        formData.append(file, (newItem as any)[file]);
-      }
-    });
+    if (newItem.geojson_file) formData.append("geojson_file", newItem.geojson_file);
+    if (newItem.duac_file) formData.append("duac_file", newItem.duac_file);
+    if (newItem.dccf_file) formData.append("dccf_file", newItem.dccf_file);
+    if (newItem.domaine_file) formData.append("domaine_file", newItem.domaine_file);
+
+    // Usage
+    if (newItem.usage && newItem.usage !== 'null') {
+      formData.append("usage", newItem.usage);
+    }
 
     // ================= API CALL =================
     const headers = {
@@ -527,6 +534,7 @@ const handleAdd = async () => {
     };
 
     if (isEdit && selectedFoncierId) {
+      // PATCH existing foncier
       await axios.patch(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/fonciers/${selectedFoncierId}/`,
         formData,
@@ -534,6 +542,7 @@ const handleAdd = async () => {
       );
       showMessage("Foncier mis à jour avec succès", "success");
     } else {
+      // POST new foncier
       await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/fonciers/`,
         formData,
@@ -555,7 +564,7 @@ const handleAdd = async () => {
       dccf_file: null,
       domaine_file: null,
       wilaya: "",
-      usage: "",
+      usage: 'null',
       progress_viabilisation: 0,
       surface: 0,
       is_transmis: false,
@@ -571,6 +580,7 @@ const handleAdd = async () => {
       is_confirmed_by_DCCF: false,
       is_confirmed_by_Domaine: false,
     });
+
     setIsEdit(false);
     setSelectedFoncierId(null);
     fetchFonciers();
@@ -583,7 +593,6 @@ const handleAdd = async () => {
     );
   }
 };
-
 
 
 const handleRemoveUser = async (taskId: number, userId: number) => {
