@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import React from "react";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -79,7 +79,7 @@ export default function DashboardPage() {
   POS: '',
   Ref_Cadastre_Section: '',
   Ref_Cadastre_Ilot: '',
-  region: localStorage.getItem("abrv_str") || "DG",
+  region: "DG",
 
   // ✅ Fichiers locaux
   duac_file: null,
@@ -496,8 +496,8 @@ const handleAdd = async () => {
     formData.append("wilaya", newItem.wilaya || "");
     
 
-    const region = localStorage.getItem("abrv_str") || "DG";
-    formData.append("region", region);
+    // const region = localStorage.getItem("abrv_str") || "DG";
+    // formData.append("region", region);
 
     // if (newItem.usage?.id) {
     //   formData.append("usage_id", String(newItem.usage.id));
