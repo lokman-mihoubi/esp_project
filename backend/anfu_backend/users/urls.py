@@ -19,6 +19,7 @@ urlpatterns = [
     path("users/<int:pk>/permissions/", UpdateUserPermissionsView.as_view(), name="update-user-permissions"),
 
     path('fonciers/', FoncierListCreateView.as_view(), name='foncier-list-create'),
+    path("/fonciers/<int:pk>/", FoncierListCreateUpdateView.as_view()),  # PATCH
     path('fonciers/<int:pk>/', FoncierDetailView.as_view(), name='foncier-detail'),
 
     # path('fonciers/<int:foncier_id>/steps/', StepCreateView.as_view(), name='step-create'),
