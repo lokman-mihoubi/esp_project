@@ -496,8 +496,8 @@ const handleAdd = async () => {
     formData.append("wilaya", newItem.wilaya || "");
     
 
-    // const region = localStorage.getItem("abrv_str") || "DG";
-    // formData.append("region", region);
+    const region = localStorage.getItem("abrv_str") || "DG";
+    formData.append("region", region);
 
     // if (newItem.usage?.id) {
     //   formData.append("usage_id", String(newItem.usage.id));
