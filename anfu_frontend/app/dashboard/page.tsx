@@ -199,7 +199,9 @@ useEffect(() => {
 useEffect(() => {
   if (selectedType && accessToken) {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/usages/?parent_type=${selectedType}`, {
-      headers: {
+      headers: {// if (newItem.usage?.id) {
+//   formData.append("usage_id", String(newItem.usage.id));
+// }
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
@@ -585,7 +587,7 @@ const handleAdd = async () => {
       dccf_file: null,
       domaine_file: null,
       wilaya: "",
-      usage: null,
+      usage: 'lgmts',
       progress_viabilisation: 0,
       surface: 0,
       is_transmis: false,
