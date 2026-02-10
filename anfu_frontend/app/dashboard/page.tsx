@@ -124,7 +124,10 @@ export default function DashboardPage() {
   'list' | 'details' | 'rapport' | 'statistics' | 'settings' | 'tasks' | 'chat'| 'calendrier'| 'historique'
 >('list');
 
-
+const LeftMap = dynamic(
+  () => import("@/components/LeftMap"),
+  { ssr: false }
+);
 const RapportComponent = dynamic(
   () => import('@/components/RapportComponent'),
   { ssr: false }
