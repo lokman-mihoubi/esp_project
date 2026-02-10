@@ -68,7 +68,7 @@ export default function DashboardPage() {
   coordinates_dms: '',
   wilaya: '',
   geojson_file: null,
-  usage: string | null,
+  usage: 'lgmts',
   progress_viabilisation: 0,
   surface: 0,
   is_transmis: false,
