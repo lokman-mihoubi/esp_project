@@ -109,7 +109,7 @@ export default function AuthPage() {
       <div className="md:w-1/2 w-full flex flex-col justify-center items-center bg-white p-8 shadow-lg">
         <div className="mb-6 flex justify-center">
           <Image
-            src="/anfu2.png"
+            src="/anfu3.png"
             alt="Logo ANFU"
             width={220}
             height={220}
@@ -141,7 +141,7 @@ export default function AuthPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
 
-            {/* ✅ Region select only for registration */}
+{/*            
             {isRegister && (
               <select
                 className="p-3 border-b border-gray-300 focus:outline-none focus:border-[#1C5844]"
@@ -154,7 +154,7 @@ export default function AuthPage() {
                   </option>
                 ))}
               </select>
-            )}
+            )} */}
 
             <div className="flex justify-between text-sm text-gray-500 mt-2">
               <label className="flex items-center gap-1">
@@ -165,15 +165,20 @@ export default function AuthPage() {
               </a>
             </div>
 
-            
+            <button
+              className="mt-4 bg-[#1C5844] hover:bg-[#174a38] text-white py-3 rounded-full font-semibold transition"
+              type="submit"
+            >
+              {isRegister ? 'Créer un compte' : 'Se connecter'}
+            </button>
           </form>
 
-          <button
+          {/* <button
             className="mt-6 text-sm text-[#1C5844] hover:underline w-full text-center"
             onClick={() => setIsRegister(!isRegister)}
           >
             {isRegister ? 'Déjà inscrit ? Connectez-vous' : 'Créer un compte'}
-          </button>
+          </button> */}
         </div>
       </div>
 
