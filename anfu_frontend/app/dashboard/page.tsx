@@ -51,6 +51,7 @@ import Navbar from "@/components/Navbar";
 import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
 import Historique from "@/components/Historique";
 import LeftMap from "@/components/LeftMap";
+import { WILAYA_TO_REGION } from "@/types/wilayaToRegion";
 
 
 export default function DashboardPage() {
@@ -193,7 +194,12 @@ const [usages, setUsages] = useState<Usage[]>([]);
 
 const [accessToken, setAccessToken] = useState<string | null>(null);
 const [isDG, setIsDG] = useState(false);
+onst userRegion = localStorage.getItem("abrv_str"); // DG, DRC, ...
 
+const filteredWilayas = WILAYAS.filter((w) => {
+  if (userRegion === "DG") return true; // DG voit tout
+  return WILAYA_TO_REGION[w.code] === userRegion;
+});
 useEffect(() => {
   setAccessToken(localStorage.getItem('access'));
   setIsDG(localStorage.getItem("isDG") === "true");
@@ -1418,6 +1424,7 @@ sx={{
 size="small"    // <-- make it small
 >
 <InputLabel id="wilaya-label">Wilaya</InputLabel>
+
 <Select
   labelId="wilaya-label"
   value={selectedWilaya}
@@ -1425,16 +1432,15 @@ size="small"    // <-- make it small
   label="Wilaya"
   MenuProps={{
     PaperProps: {
-      sx: {
-        maxHeight: 300, // makes the dropdown scrollable
-      },
+      sx: { maxHeight: 300 },
     },
   }}
 >
   <MenuItem value="">
     <em>Toutes les wilayas</em>
   </MenuItem>
-  {WILAYAS.map((w) => (
+
+  {filteredWilayas.map((w) => (
     <MenuItem key={w.code} value={w.code}>
       {w.name}
     </MenuItem>
@@ -1960,17 +1966,19 @@ getRowId={(row) => row.id}
 
     {/* ================= WILAYA ================= */}
     <FormControl sx={{ flex: "1 1 45%" }} disabled={!canEditNormalFields}>
-      <InputLabel>Wilaya</InputLabel>
-      <Select
-        value={newItem.wilaya || ""}
-        onChange={(e) => setNewItem({ ...newItem, wilaya: e.target.value })}
-      >
-        {WILAYAS.map((wilaya) => (
-          <MenuItem key={wilaya.code} value={wilaya.code}>
-            {wilaya.code} - {wilaya.name}
-          </MenuItem>
-        ))}
-      </Select>
+    <InputLabel>Wilaya</InputLabel>
+    <Select
+      value={newItem.wilaya || ""}
+      onChange={(e) =>
+        setNewItem({ ...newItem, wilaya: e.target.value })
+      }
+    >
+      {filteredWilayas.map((wilaya) => (
+        <MenuItem key={wilaya.code} value={wilaya.code}>
+          {wilaya.code} - {wilaya.name}
+        </MenuItem>
+      ))}
+    </Select>
     </FormControl>
 
     {/* ================= FILE UPLOAD ================= */}
