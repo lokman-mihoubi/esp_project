@@ -194,7 +194,7 @@ const [usages, setUsages] = useState<Usage[]>([]);
 
 const [accessToken, setAccessToken] = useState<string | null>(null);
 const [isDG, setIsDG] = useState(false);
-onst userRegion = localStorage.getItem("abrv_str"); // DG, DRC, ...
+const userRegion = localStorage.getItem("abrv_str"); // DG, DRC, ...
 
 const filteredWilayas = WILAYAS.filter((w) => {
   if (userRegion === "DG") return true; // DG voit tout
