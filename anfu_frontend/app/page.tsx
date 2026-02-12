@@ -165,12 +165,7 @@ export default function AuthPage() {
               </a>
             </div>
 
-            <button
-              className="mt-4 bg-[#1C5844] hover:bg-[#174a38] text-white py-3 rounded-full font-semibold transition"
-              type="submit"
-            >
-              {isRegister ? 'Créer un compte' : 'Se connecter'}
-            </button>
+            
           </form>
 
           <button
