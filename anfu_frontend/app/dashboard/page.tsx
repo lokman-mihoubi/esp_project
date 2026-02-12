@@ -196,9 +196,16 @@ const [accessToken, setAccessToken] = useState<string | null>(null);
 const [isDG, setIsDG] = useState(false);
 
 
+const [userRegion, setUserRegion] = useState<string | null>(null);
+
+useEffect(() => {
+  const region = localStorage.getItem("abrv_str");
+  setUserRegion(region);
+}, []);
+
 const filteredWilayas = WILAYAS.filter((w) => {
-  const userRegion = localStorage.getItem("abrv_str"); // DG, DRC, ...
-  if (userRegion === "DG") return true; // DG voit tout
+  if (!userRegion) return false; // أو true حسب ما تحب
+  if (userRegion === "DG") return true;
   return WILAYA_TO_REGION[w.code] === userRegion;
 });
 useEffect(() => {
