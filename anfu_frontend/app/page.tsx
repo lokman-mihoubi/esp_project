@@ -109,7 +109,7 @@ export default function AuthPage() {
       <div className="md:w-1/2 w-full flex flex-col justify-center items-center bg-white p-8 shadow-lg">
         <div className="mb-6 flex justify-center">
           <Image
-            src="/anfu3.png"
+            src="/anfu1.png"
             alt="Logo ANFU"
             width={220}
             height={220}
