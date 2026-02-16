@@ -1491,14 +1491,14 @@ size="small"    // <-- make it small
     onChange={handleImportFonciers}
   />
 </Button>
-<Button
+{/* <Button
   variant="contained"
   color="error"
   startIcon={<DeleteIcon />}
   onClick={handleDeleteAll}
 >
   Supprimer tout
-</Button>
+</Button> */}
 <Button
   variant="outlined"
   color="primary"
