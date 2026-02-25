@@ -29,12 +29,14 @@ export default function AuthPage() {
   try {
     // 🔹 Register if needed
     if (isRegister) {
-      // Pass abrv_str (DG, DRC, etc.) as region
       await register(username, password, region); 
     }
 
     // 🔹 Login
     const res = await login(username, password);
+
+    // 👉 LOG ROLE IN CONSOLE
+    console.log("User role:", res.data.role);
 
     // 🔐 Store JWT tokens
     localStorage.setItem("access", res.data.access);
@@ -47,12 +49,13 @@ export default function AuthPage() {
     // ✅ Store permissions
     localStorage.setItem("can_view", String(res.data.can_view));
     localStorage.setItem("can_write", String(res.data.can_write));
-    localStorage.setItem("can_see_historique", String(res.data.can_see_historique));
+    localStorage.setItem(
+      "can_see_historique",
+      String(res.data.can_see_historique)
+    );
 
-    // 🌍 Store region / abrv_str (DG, DRC, DRE, ...)
-    localStorage.setItem("abrv_str", res.data.abrv_str || ""); // Use abrv_str, not full region name
-
-    // 🔹 Helper flag for DG
+    // 🌍 Store region
+    localStorage.setItem("abrv_str", res.data.abrv_str || "");
     localStorage.setItem("isDG", String(res.data.abrv_str === "DG"));
 
     toast.success("Connexion réussie !", {
@@ -60,11 +63,20 @@ export default function AuthPage() {
       autoClose: 3000,
     });
 
-    router.push("/dashboard");
+    const role = res.data.role?.toLowerCase();
+
+    if (role === "anfu" || role === "ministere" || role === "dgv"
+         || role === "dgl" || role === "dgcmr" || role === "dgua" || role === "dgaat" 
+    ) {
+      router.push("/dashboard1");
+    } else {
+      router.push("/dashboard");
+    }
 
   } catch (err: any) {
     const errorMessage =
-      err.response?.data?.detail || "Nom d’utilisateur ou mot de passe incorrect";
+      err.response?.data?.detail ||
+      "Nom d’utilisateur ou mot de passe incorrect";
 
     toast.error(errorMessage, {
       position: "top-right",
@@ -72,6 +84,7 @@ export default function AuthPage() {
     });
   }
 };
+
 
 
 
@@ -109,7 +122,7 @@ export default function AuthPage() {
       <div className="md:w-1/2 w-full flex flex-col justify-center items-center bg-white p-8 shadow-lg">
         <div className="mb-6 flex justify-center">
           <Image
-            src="/anfu1.png"
+            src="/anfu3.png"
             alt="Logo ANFU"
             width={220}
             height={220}
