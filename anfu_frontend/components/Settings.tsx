@@ -238,13 +238,14 @@ export default function Settings() {
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
           >
-            <MenuItem value="all">Tous</MenuItem>
-            <MenuItem value="utilisateur">Utilisateur</MenuItem>
             <MenuItem value="admin">Admin</MenuItem>
+            <MenuItem value="utilisateur">Utilisateur</MenuItem>
             <MenuItem value="ministere">Ministère</MenuItem>
-            <MenuItem value="dgn">DGN</MenuItem>
-            <MenuItem value="dgl">DGL</MenuItem>
             <MenuItem value="anfu">ANFU</MenuItem>
+            <MenuItem value="dgl">DGL</MenuItem>
+            <MenuItem value="dgua">DGUA</MenuItem>
+            <MenuItem value="dgaat">DGAAT</MenuItem>
+            <MenuItem value="dgcmr">DGCMR</MenuItem>
             <MenuItem value="dgv">DGV</MenuItem>
           </Select>
         </Box>
@@ -283,12 +284,14 @@ export default function Settings() {
                           }
                           size="small"
                         >
-                          <MenuItem value="utilisateur">Utilisateur</MenuItem>
                           <MenuItem value="admin">Admin</MenuItem>
+                          <MenuItem value="utilisateur">Utilisateur</MenuItem>
                           <MenuItem value="ministere">Ministère</MenuItem>
-                          <MenuItem value="dgn">DGN</MenuItem>
-                          <MenuItem value="dgl">DGL</MenuItem>
                           <MenuItem value="anfu">ANFU</MenuItem>
+                          <MenuItem value="dgl">DGL</MenuItem>
+                          <MenuItem value="dgua">DGUA</MenuItem>
+                          <MenuItem value="dgaat">DGAAT</MenuItem>
+                          <MenuItem value="dgcmr">DGCMR</MenuItem>
                           <MenuItem value="dgv">DGV</MenuItem>
                         </Select>
                       </TableCell>
@@ -340,13 +343,15 @@ export default function Settings() {
           <TextField label="Mot de passe" type="password" onChange={(e)=>setNewPassword(e.target.value)} />
 
           <Select value={newRole} onChange={(e)=>setNewRole(e.target.value)}>
-            <MenuItem value="utilisateur">Utilisateur</MenuItem>
             <MenuItem value="admin">Admin</MenuItem>
+            <MenuItem value="utilisateur">Utilisateur</MenuItem>
             <MenuItem value="ministere">Ministère</MenuItem>
-            <MenuItem value="dgn">DGN</MenuItem>
-            <MenuItem value="dgv">DGV</MenuItem>
-            <MenuItem value="dgl">DGL</MenuItem>
             <MenuItem value="anfu">ANFU</MenuItem>
+            <MenuItem value="dgl">DGL</MenuItem>
+            <MenuItem value="dgua">DGUA</MenuItem>
+            <MenuItem value="dgaat">DGAAT</MenuItem>
+            <MenuItem value="dgcmr">DGCMR</MenuItem>
+            <MenuItem value="dgv">DGV</MenuItem>
           </Select>
 
           <Select value={newRegion} onChange={(e)=>setNewRegion(e.target.value)}>
