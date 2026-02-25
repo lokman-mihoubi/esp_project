@@ -64,6 +64,13 @@ class UserSerializer(serializers.ModelSerializer):
 
         return perms
 
+
+
+class ProfileRoleUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ["role"]
+        
 from django.contrib.auth import get_user_model
 class MessageSerializer(serializers.ModelSerializer):
     sender = UserSerializer(read_only=True)
