@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from .serializers import UserSerializer
 from .models import Profile,Message1
 from rest_framework.generics import UpdateAPIView
-from .serializers import Message1Serializer
+from .serializers import Message1Serializer,ProfileRoleUpdateSerializer
 from .utils import log_action
 
 from rest_framework.views import APIView
@@ -153,16 +153,21 @@ class ChangePasswordView(APIView):
         return Response({'message': 'Mot de passe modifié avec succès.'})
 
 
+# class UserRoleUpdateView(UpdateAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserSerializer
+#     lookup_field = "pk"
+
+#     def update(self, request, *args, **kwargs):
+#         kwargs['partial'] = True
+#         return super().update(request, *args, **kwargs)
+
 class UserRoleUpdateView(UpdateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    lookup_field = "pk"
+    serializer_class = ProfileRoleUpdateSerializer
+    lookup_field = "user_id"
 
-    def update(self, request, *args, **kwargs):
-        kwargs['partial'] = True
-        return super().update(request, *args, **kwargs)
-
-
+    def get_queryset(self):
+        return Profile.objects.all()
 
 class UserListView(APIView):
     # permission_classes = [IsAuthenticated]  
