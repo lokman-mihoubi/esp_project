@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import {
+  Box,
   Card,
-  CardContent,
   CardHeader,
+  CardContent,
   Divider,
   Table,
   TableBody,
@@ -23,7 +24,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Box,
   Checkbox,
   FormControlLabel,
   FormGroup,
@@ -32,139 +32,131 @@ import {
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 
+/* ================= TYPES ================= */
+
 interface User {
   id: number;
   username: string;
   email: string;
   role: string;
   permissions?: string[];
-  region?: string; // ✅ region added
-  abrv_str?: string; 
+  region?: string;
+  abrv_str?: string;
 }
+
+/* ================= CONSTANTS ================= */
+
+const allPermissions = ["view", "write", "can_see_historique"];
+
+const permissionLabels: Record<string, string> = {
+  view: "Voir",
+  write: "Écrire",
+  can_see_historique: "Voir l’historique",
+};
+
+const allRegions = [
+  "ouest",
+  "centre",
+  "est",
+  "sud_est",
+  "sud_ouest",
+  "grand_sud",
+];
+
+const allAbrvStr = [
+  "DG","DGA","DAF","DFC","DRHM","SRH","SCPT","SMGX","SINF",
+  "DP","DP-PROSP","DP-MOB","SPROSP","SSIG","SJUR","SPFON",
+  "DGF","DGF-MO","DFUR","DGF-PF","SEREA","SMAR","SCOM","SINV",
+  "DRC","DRO","DRE","DRGS","DRSO","DRSE",
+];
+
+/* ================= COMPONENT ================= */
 
 export default function Settings() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // filters
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
 
   // dialogs
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // new user fields
+  // create user
   const [newUsername, setNewUsername] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("utilisateur");
+  const [newRegion, setNewRegion] = useState("centre");
   const [newPermissions, setNewPermissions] = useState<string[]>([]);
-  const [newRegion, setNewRegion] = useState("centre"); // default region
+  const [newAbrvStr, setNewAbrvStr] = useState("");
 
-  // filters
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
-
-  // permissions dialog
+  // edit permissions
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editPermissions, setEditPermissions] = useState<string[]>([]);
 
-  // delete dialog
+  // delete
   const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
 
-  // fake permission list (in real case, fetch from backend if needed)
-  const allPermissions = ["view", "write","can_see_historique"];
-  const allRegions = ["ouest", "centre", "est", "sud_est", "sud_ouest", "grand_sud"];
-  
- const permissionLabels: Record<string, string> = {
-  view: "Voir",
-  write: "Écrire",
-  can_see_historique: "Voir l’historique",
-};
-
-const [newAbrvStr, setNewAbrvStr] = useState("");
-const allAbrvStr = [
-  "DG","DGA","DAF","DFC","DRHM","SRH","SCPT","SMGX","SINF",
-  "DP","DP-PROSP","DP-MOB","SPROSP","SSIG","SJUR","SPFON",
-  "DGF","DGF-MO","DFUR","DGF-PF","SEREA","SMAR","SCOM","SINV",
-  "DRC","DRO","DRE","DRGS","DRSO","DRSE","DPC","SPROSPC",
-  "SSIGC","DPMC","SJURC","SPFONC","DMOC","SEREAC","SMARC",
-  "SF"
-];
-
+  /* ================= API ================= */
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/users/`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("access")}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/users/`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access")}`,
+          },
+        }
+      );
       const data = await res.json();
-      if (Array.isArray(data)) setUsers(data);
-      else if (data.results) setUsers(data.results);
-      else setUsers([]);
-    } catch (error) {
-      console.error("Erreur chargement utilisateurs:", error);
+      setUsers(Array.isArray(data) ? data : data.results || []);
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
   const updateRole = async (id: number, role: string) => {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/users/${id}/role/`, {
+    await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/users/${id}/role/`,
+      {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("access")}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ role }),
-      });
-
-      if (res.ok) {
-        setUsers((prev) =>
-          prev.map((user) => (user.id === id ? { ...user, role } : user))
-        );
-      } else {
-        console.error("Erreur mise à jour rôle:", await res.text());
       }
-    } catch (error) {
-      console.error("Erreur mise à jour rôle:", error);
-    }
+    );
+    setUsers((prev) =>
+      prev.map((u) => (u.id === id ? { ...u, role } : u))
+    );
   };
 
   const updatePermissions = async (id: number, permissions: string[]) => {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/users/${id}/permissions/`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ permissions }),
-        }
-      );
-
-      if (res.ok) {
-        setUsers((prev) =>
-          prev.map((user) =>
-            user.id === id ? { ...user, permissions } : user
-          )
-        );
-        setPermissionDialogOpen(false);
-      } else {
-        console.error("Erreur mise à jour permissions");
+    await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/users/${id}/permissions/`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("access")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ permissions }),
       }
-    } catch (error) {
-      console.error("Erreur API permissions:", error);
-    }
+    );
+    setPermissionDialogOpen(false);
+    fetchUsers();
   };
 
- const createUser = async () => {
-  try {
-    const res = await fetch(
+  const createUser = async () => {
+    await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/auth/register/`,
       {
         method: "POST",
@@ -174,222 +166,155 @@ const allAbrvStr = [
           email: newEmail,
           password: newPassword,
           role: newRole,
-          permissions: newPermissions,
           region: newRegion,
-          abrv_str: newAbrvStr || null, // ✅ FIXED
+          permissions: newPermissions,
+          abrv_str: newAbrvStr || null,
         }),
       }
     );
 
-    if (res.ok) {
-      fetchUsers();
-      setCreateDialogOpen(false);
-
-      // reset form
-      setNewUsername("");
-      setNewEmail("");
-      setNewPassword("");
-      setNewRole("utilisateur");
-      setNewPermissions([]);
-      setNewRegion("centre");
-      setNewAbrvStr(""); // ✅ reset
-    }
-  } catch (error) {
-    alert("Erreur création utilisateur: " + error);
-  }
-};
-
+    setCreateDialogOpen(false);
+    setNewUsername("");
+    setNewEmail("");
+    setNewPassword("");
+    setNewPermissions([]);
+    setNewAbrvStr("");
+    fetchUsers();
+  };
 
   const deleteUser = async () => {
     if (!deleteUserId) return;
 
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/users/${deleteUserId}/delete/`, {
+    await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/users/${deleteUserId}/delete/`,
+      {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("access")}`,
         },
-      });
-
-      if (res.ok) {
-        setUsers((prev) => prev.filter((user) => user.id !== deleteUserId));
-        setDeleteDialogOpen(false);
-        setDeleteUserId(null);
-      } else {
-        console.error("Erreur suppression utilisateur");
       }
-    } catch (error) {
-      console.error("Erreur API suppression:", error);
-    }
-  };
-
-  const handlePermissionToggle = (perm: string) => {
-    setNewPermissions((prev) =>
-      prev.includes(perm) ? prev.filter((p) => p !== perm) : [...prev, perm]
     );
-  };
 
-  const handleEditPermissionToggle = (perm: string) => {
-    setEditPermissions((prev) =>
-      prev.includes(perm) ? prev.filter((p) => p !== perm) : [...prev, perm]
-    );
+    setDeleteDialogOpen(false);
+    setDeleteUserId(null);
+    fetchUsers();
   };
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.username.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase());
-    const matchesRole = roleFilter === "all" || user.role === roleFilter;
-    return matchesSearch && matchesRole;
-  });
+  const filteredUsers = users.filter(
+    (u) =>
+      (u.username.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase())) &&
+      (roleFilter === "all" || u.role === roleFilter)
+  );
+
+  /* ================= UI ================= */
 
   return (
-    <Box sx={{ minHeight: "100vh", p: 4 }}>
-      <Card sx={{ boxShadow: 3, borderRadius: 3, mb: 6 }}>
+    <Box sx={{ p: 4 }}>
+      <Card>
         <CardHeader
-          title={
-            <Typography variant="h6" sx={{ fontWeight: "bold", color: "#1976d2" }}>
-              Gestion des utilisateurs
-            </Typography>
-          }
+          title="Gestion des utilisateurs"
           action={
-            <Button
-              variant="contained"
-              sx={{
-                background: "linear-gradient(90deg, #1976d2, #42a5f5)",
-                color: "#fff",
-                borderRadius: "12px",
-                px: 3,
-                py: 1,
-                boxShadow: 2,
-                "&:hover": {
-                  background: "linear-gradient(90deg, #1565c0, #1e88e5)",
-                },
-              }}
-              onClick={() => setCreateDialogOpen(true)}
-            >
-              + Ajouter un utilisateur
+            <Button variant="contained" onClick={() => setCreateDialogOpen(true)}>
+              + Ajouter
             </Button>
           }
         />
         <Divider />
 
         {/* Filters */}
-        <Box sx={{ display: "flex", gap: 2, p: 3 }}>
+        <Box sx={{ display: "flex", gap: 2, p: 2 }}>
           <TextField
             label="Rechercher"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            size="small"
             fullWidth
           />
           <Select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            size="small"
-            sx={{ minWidth: 180 }}
           >
-            <MenuItem value="all">Tous les rôles</MenuItem>
+            <MenuItem value="all">Tous</MenuItem>
             <MenuItem value="utilisateur">Utilisateur</MenuItem>
             <MenuItem value="admin">Admin</MenuItem>
+            <MenuItem value="ministere">Ministère</MenuItem>
+            <MenuItem value="dgn">DGN</MenuItem>
+            <MenuItem value="anfu">ANFU</MenuItem>
+            <MenuItem value="dgv">DGV</MenuItem>
           </Select>
         </Box>
 
         <CardContent>
           {loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", p: 6 }}>
-              <CircularProgress />
-            </Box>
-          ) : filteredUsers.length === 0 ? (
-            <Typography align="center" sx={{ color: "gray" }}>
-              Aucun utilisateur trouvé.
-            </Typography>
+            <CircularProgress />
           ) : (
-            <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 1 }}>
+            <TableContainer component={Paper}>
               <Table>
-                <TableHead sx={{ backgroundColor: "#1976d2" }}>
+                <TableHead>
                   <TableRow>
-                    <TableCell sx={{ color: "white", fontWeight: "bold" }}>ID</TableCell>
-                    <TableCell sx={{ color: "white", fontWeight: "bold" }}>Nom</TableCell>
-                    <TableCell sx={{ color: "white", fontWeight: "bold" }}>Email</TableCell>
-                    <TableCell sx={{ color: "white", fontWeight: "bold" }}>Rôle</TableCell>
-                    <TableCell sx={{ color: "white", fontWeight: "bold" }}>Région</TableCell>
-                    <TableCell sx={{ color: "white", fontWeight: "bold" }}> Structure</TableCell>
-                    <TableCell sx={{ color: "white", fontWeight: "bold" }}>Permissions</TableCell>
-                    <TableCell sx={{ color: "white", fontWeight: "bold" }}>Actions</TableCell>
-                     
-                    
-
+                    <TableCell>ID</TableCell>
+                    <TableCell>Nom</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Rôle</TableCell>
+                    <TableCell>Région</TableCell>
+                    <TableCell>Structure</TableCell>
+                    <TableCell>Permissions</TableCell>
+                    <TableCell />
                   </TableRow>
                 </TableHead>
+
                 <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow
-                      key={user.id}
-                      hover
-                      sx={{
-                        "&:hover": { backgroundColor: "#f0f7ff" },
-                        transition: "0.3s",
-                      }}
-                    >
-                      <TableCell>{user.id}</TableCell>
-                      <TableCell>{user.username}</TableCell>
-                      <TableCell>{user.email}</TableCell>
+                  {filteredUsers.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell>{u.id}</TableCell>
+                      <TableCell>{u.username}</TableCell>
+                      <TableCell>{u.email}</TableCell>
+
                       <TableCell>
                         <Select
-                          value={user.role}
-                          onChange={(e) => updateRole(user.id, e.target.value)}
+                          value={u.role}
+                          onChange={(e) =>
+                            updateRole(u.id, e.target.value)
+                          }
                           size="small"
-                          fullWidth
                         >
                           <MenuItem value="utilisateur">Utilisateur</MenuItem>
                           <MenuItem value="admin">Admin</MenuItem>
+                          <MenuItem value="ministere">Ministère</MenuItem>
+                          <MenuItem value="dgn">DGN</MenuItem>
+                          <MenuItem value="dgv">DGV</MenuItem>
+                          <MenuItem value="anfu">ANFU</MenuItem>
+                          <MenuItem value="dgv">DGV</MenuItem>
                         </Select>
                       </TableCell>
-                      <TableCell>{user.region}</TableCell>
-                      <TableCell>{user.abrv_str || "-"}</TableCell>
+
+                      <TableCell>{u.region}</TableCell>
+                      <TableCell>{u.abrv_str || "-"}</TableCell>
+
                       <TableCell>
-                        {user.permissions && user.permissions.length > 0 ? (
-                          <>
-                            {user.permissions
-                            .map((perm) => permissionLabels[perm] || perm)
-                            .join(", ")}
-                            <IconButton
-                              color="primary"
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setEditPermissions(user.permissions || []);
-                                setPermissionDialogOpen(true);
-                              }}
-                            >
-                              <VisibilityIcon />
-                            </IconButton>
-                          </>
-                        ) : (
-                          <>
-                            Aucune
-                            <IconButton
-                              color="primary"
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setEditPermissions([]);
-                                setPermissionDialogOpen(true);
-                              }}
-                            >
-                              <VisibilityIcon />
-                            </IconButton>
-                          </>
-                        )}
+                        {(u.permissions || [])
+                          .map((p) => permissionLabels[p])
+                          .join(", ")}
+                        <IconButton
+                          onClick={() => {
+                            setSelectedUser(u);
+                            setEditPermissions(u.permissions || []);
+                            setPermissionDialogOpen(true);
+                          }}
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
                       </TableCell>
+
                       <TableCell>
                         <IconButton
                           color="error"
                           onClick={() => {
-                            setDeleteUserId(user.id);
+                            setDeleteUserId(u.id);
                             setDeleteDialogOpen(true);
                           }}
                         >
@@ -405,161 +330,105 @@ const allAbrvStr = [
         </CardContent>
       </Card>
 
-      {/* Create User Dialog */}
-      <Dialog
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle sx={{ fontWeight: "bold", color: "#1976d2" }}>
-          Créer un utilisateur
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
-            <TextField
-              label="Nom d'utilisateur"
-              value={newUsername}
-              onChange={(e) => setNewUsername(e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Mot de passe"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              fullWidth
-            />
-            <Select value={newRole} onChange={(e) => setNewRole(e.target.value)} fullWidth>
-              <MenuItem value="utilisateur">Utilisateur</MenuItem>
-              <MenuItem value="admin">Admin</MenuItem>
-            </Select>
-            {/* Region field */}
-            <Select value={newRegion} onChange={(e) => setNewRegion(e.target.value)} fullWidth>
-              {allRegions.map((r) => (
-                <MenuItem key={r} value={r}>
-                  {r.charAt(0).toUpperCase() + r.slice(1).replace("_", " ")}
-                </MenuItem>
-              ))}
-            </Select>
-            <Select
-            value={newAbrvStr}
-            onChange={(e) => setNewAbrvStr(e.target.value)}
-            fullWidth
-            displayEmpty
-          >
-            <MenuItem value="">Aucune structure</MenuItem>
-            {allAbrvStr.map((a) => (
-              <MenuItem key={a} value={a}>
-                {a}
-              </MenuItem>
-            ))}
+      {/* ===== CREATE USER ===== */}
+      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)}>
+        <DialogTitle>Créer utilisateur</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <TextField label="Username" onChange={(e)=>setNewUsername(e.target.value)} />
+          <TextField label="Email" onChange={(e)=>setNewEmail(e.target.value)} />
+          <TextField label="Mot de passe" type="password" onChange={(e)=>setNewPassword(e.target.value)} />
+
+          <Select value={newRole} onChange={(e)=>setNewRole(e.target.value)}>
+            <MenuItem value="utilisateur">Utilisateur</MenuItem>
+            <MenuItem value="admin">Admin</MenuItem>
+            <MenuItem value="ministere">Ministère</MenuItem>
+            <MenuItem value="dgn">DGN</MenuItem>
+            <MenuItem value="dgv">DGV</MenuItem>
+            <MenuItem value="anfu">ANFU</MenuItem>
           </Select>
 
+          <Select value={newRegion} onChange={(e)=>setNewRegion(e.target.value)}>
+            {allRegions.map(r => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+          </Select>
 
-            <Typography variant="subtitle1" sx={{ mt: 2 }}>
-              Permissions :
-            </Typography>
-            <FormGroup>
-              {allPermissions.map((perm) => (
-                <FormControlLabel
-                  key={perm}
-                  control={
-                    <Checkbox
-                      checked={newPermissions.includes(perm)}
-                      onChange={() => handlePermissionToggle(perm)}
-                    />
-                  }
-                  label={permissionLabels[perm] || perm}
-                />
-              ))}
-            </FormGroup>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setCreateDialogOpen(false)} color="inherit">
-            Annuler
-          </Button>
-          <Button
-            variant="contained"
-            sx={{
-              background: "linear-gradient(90deg, #1976d2, #42a5f5)",
-              color: "#fff",
-              borderRadius: "8px",
-              px: 3,
-              py: 1,
-            }}
-            onClick={createUser}
-          >
-            Créer
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <Select value={newAbrvStr} onChange={(e)=>setNewAbrvStr(e.target.value)} displayEmpty>
+            <MenuItem value="">Aucune structure</MenuItem>
+            {allAbrvStr.map(a => <MenuItem key={a} value={a}>{a}</MenuItem>)}
+          </Select>
 
-      {/* Edit Permissions Dialog */}
-      <Dialog
-        open={permissionDialogOpen}
-        onClose={() => setPermissionDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>Éditer permissions de {selectedUser?.username}</DialogTitle>
-        <DialogContent>
           <FormGroup>
-            {allPermissions.map((perm) => (
+            {allPermissions.map(p => (
               <FormControlLabel
-                key={perm}
+                key={p}
                 control={
                   <Checkbox
-                    checked={editPermissions.includes(perm)}
-                    onChange={() => handleEditPermissionToggle(perm)}
+                    checked={newPermissions.includes(p)}
+                    onChange={() =>
+                      setNewPermissions(prev =>
+                        prev.includes(p)
+                          ? prev.filter(x => x !== p)
+                          : [...prev, p]
+                      )
+                    }
                   />
                 }
-                label={permissionLabels[perm] || perm}
+                label={permissionLabels[p]}
               />
             ))}
           </FormGroup>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPermissionDialogOpen(false)}>Annuler</Button>
+          <Button onClick={() => setCreateDialogOpen(false)}>Annuler</Button>
+          <Button onClick={createUser} variant="contained">Créer</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ===== PERMISSIONS ===== */}
+      <Dialog open={permissionDialogOpen} onClose={()=>setPermissionDialogOpen(false)}>
+        <DialogTitle>Permissions</DialogTitle>
+        <DialogContent>
+          <FormGroup>
+            {allPermissions.map(p => (
+              <FormControlLabel
+                key={p}
+                control={
+                  <Checkbox
+                    checked={editPermissions.includes(p)}
+                    onChange={() =>
+                      setEditPermissions(prev =>
+                        prev.includes(p)
+                          ? prev.filter(x => x !== p)
+                          : [...prev, p]
+                      )
+                    }
+                  />
+                }
+                label={permissionLabels[p]}
+              />
+            ))}
+          </FormGroup>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={()=>setPermissionDialogOpen(false)}>Annuler</Button>
           <Button
             variant="contained"
-            sx={{ background: "#1976d2", color: "white" }}
-            onClick={() => {
-              if (selectedUser) {
-                updatePermissions(selectedUser.id, editPermissions);
-              }
-            }}
+            onClick={() =>
+              selectedUser &&
+              updatePermissions(selectedUser.id, editPermissions)
+            }
           >
             Sauvegarder
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-      >
+      {/* ===== DELETE ===== */}
+      <Dialog open={deleteDialogOpen} onClose={()=>setDeleteDialogOpen(false)}>
         <DialogTitle>Confirmation</DialogTitle>
-        <DialogContent>
-          Voulez-vous vraiment supprimer cet utilisateur ?
-        </DialogContent>
+        <DialogContent>Supprimer cet utilisateur ?</DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} color="inherit">
-            Annuler
-          </Button>
-          <Button
-            onClick={deleteUser}
-            color="error"
-            variant="contained"
-          >
+          <Button onClick={()=>setDeleteDialogOpen(false)}>Annuler</Button>
+          <Button color="error" variant="contained" onClick={deleteUser}>
             Supprimer
           </Button>
         </DialogActions>
