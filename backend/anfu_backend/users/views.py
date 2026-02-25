@@ -11,38 +11,83 @@ from rest_framework.generics import UpdateAPIView
 from .serializers import Message1Serializer
 from .utils import log_action
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.contrib.auth.models import User
+from .models import Profile
+
+
 class RegisterView(APIView):
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
-        region = request.data.get('region', 'centre')
+        region = request.data.get('region', 'DRC')
         abrv_str = request.data.get('abrv_str')
+        role = request.data.get('role', 'utilisateur')  # ✅ NEW
 
         if not username or not password:
-            return Response({'error': 'Username and password required'}, status=400)
+            return Response(
+                {'error': 'Username and password required'},
+                status=400
+            )
 
         if User.objects.filter(username=username).exists():
-            return Response({'error': 'Username already taken'}, status=400)
+            return Response(
+                {'error': 'Username already taken'},
+                status=400
+            )
 
-        user = User.objects.create_user(username=username, password=password)
+        # ✅ Validate role
+        valid_roles = [choice[0] for choice in Profile.ROLE_CHOICES]
+        if role not in valid_roles:
+            return Response(
+                {'error': f'Invalid role. Allowed: {valid_roles}'},
+                status=400
+            )
 
-        Profile.objects.create(
+        # Create user
+        user = User.objects.create_user(
+            username=username,
+            password=password
+        )
+
+        # ✅ Permissions logic (OPTIONAL but recommended)
+        can_view = False
+        can_write = False
+        can_see_historique = False
+
+        if role in ['admin', 'dgn']:
+            can_view = True
+            can_write = True
+            can_see_historique = True
+        elif role == 'ministere':
+            can_view = True
+            can_see_historique = True
+
+        # Create profile
+        profile = Profile.objects.create(
             user=user,
-            role="utilisateur",
+            role=role,
             region=region,
-            abrv_str=abrv_str
+            abrv_str=abrv_str,
+            can_view=can_view,
+            can_write=can_write,
+            can_see_historique=can_see_historique
         )
 
         return Response(
             {
-                'message': 'User created',
-                'role': 'utilisateur',
-                'region': region,
-                'abrv_str': abrv_str,
+                'message': 'User created successfully',
+                'username': user.username,
+                'role': profile.role,
+                'region': profile.region,
+                'abrv_str': profile.abrv_str,
+                'can_view': profile.can_view,
+                'can_write': profile.can_write,
+                'can_see_historique': profile.can_see_historique,
             },
             status=201
         )
-
 
 # views.py - LoginView
 
@@ -83,6 +128,30 @@ class LogoutView(APIView):
             return Response({"message": "Logged out successfully"}, status=205)
         except Exception:
             return Response({"error": "Invalid token"}, status=400)
+
+
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        current_password = request.data.get('current_password')
+        new_password = request.data.get('new_password')
+
+        if not current_password or not new_password:
+            return Response({'error': 'Tous les champs sont obligatoires.'}, status=400)
+
+        if not user.check_password(current_password):
+            return Response({'error': 'Mot de passe actuel incorrect.'}, status=400)
+
+        user.set_password(new_password)
+        user.save()
+        return Response({'message': 'Mot de passe modifié avec succès.'})
+
 
 class UserRoleUpdateView(UpdateAPIView):
     queryset = User.objects.all()
@@ -1098,3 +1167,173 @@ class HistoriqueListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+
+
+
+
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from django.contrib.auth.models import User
+from .models import Space,Etape
+from .serializers import SpaceSerializer,EtapeSerializer
+
+class SpaceListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        status_filter = request.query_params.get('status')
+        if status_filter and status_filter != "Tous":
+            spaces = Space.objects.filter(status=status_filter)
+        else:
+            spaces = Space.objects.all()
+        serializer = SpaceSerializer(spaces, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        title = request.data.get('title')
+        description = request.data.get('description', '')
+        participant_codes = request.data.get('participants', [])
+
+        if not title or not participant_codes:
+            return Response({'error': 'Title and participants required'}, status=400)
+
+        initiator_code = request.user.username  # assuming username is code like 'ANFU'
+
+        # Include initiator automatically in participants
+        if initiator_code not in participant_codes:
+            participant_codes.append(initiator_code)
+
+        space = Space.objects.create(
+            title=title,
+            description=description,
+            initiator=request.user,
+            participants=participant_codes  # assign list directly
+        )
+
+        serializer = SpaceSerializer(space)
+        return Response(serializer.data, status=201)
+
+
+
+class EtapeCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, space_id):
+        text = request.data.get('text')
+        if not text:
+            return Response({'error': 'Text required'}, status=400)
+
+        try:
+            space = Space.objects.get(id=space_id)
+        except Space.DoesNotExist:
+            return Response({'error': 'Space not found'}, status=404)
+
+        if request.user.username not in space.participants and request.user != space.initiator:
+            return Response({'error': 'Not authorized'}, status=403)
+
+        etape = Etape.objects.create(space=space, author=request.user, text=text)
+        serializer = EtapeSerializer(etape)
+        return Response(serializer.data, status=201)
+
+
+
+class SpaceDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, space_id):
+        try:
+            return Space.objects.get(id=space_id)
+        except Space.DoesNotExist:
+            return None
+
+    def get(self, request, space_id):
+        space = self.get_object(space_id)
+        if not space:
+            return Response({'error': 'Space not found'}, status=404)
+        serializer = SpaceSerializer(space)
+        return Response(serializer.data)
+
+    def delete(self, request, space_id):
+        space = self.get_object(space_id)
+        if not space:
+            return Response({'error': 'Space not found'}, status=404)
+
+        # Optional: Only initiator can delete
+        if request.user != space.initiator:
+            return Response({'error': 'Not authorized'}, status=403)
+
+        space.delete()
+        return Response({'success': 'Space deleted'}, status=204)
+
+
+
+
+from rest_framework import generics, filters
+from .models import Thematique, Comm,File
+from .serializers import ThematiqueSerializer, CommSerializer,FileSerializer
+
+# List and create thematiques
+class ThematiqueListCreateView(generics.ListCreateAPIView):
+    serializer_class = ThematiqueSerializer
+
+    def get_queryset(self):
+        espace = self.request.query_params.get('espace')
+        if espace:
+            return Thematique.objects.filter(espace=espace)
+        return Thematique.objects.all()
+
+
+# List and create comments for a given thematique
+# class CommListCreateView(generics.ListCreateAPIView):
+#     permission_classes = [IsAuthenticated]
+#     serializer_class = CommSerializer
+
+#     def get_queryset(self):
+#         thematique_id = self.kwargs.get('thematique_id')
+#         return Comm.objects.filter(thematique_id=thematique_id).order_by('created_at')
+
+#     def perform_create(self, serializer):
+#         thematique_id = self.kwargs.get('thematique_id')
+#         serializer.save(thematique_id=thematique_id)
+
+
+class CommListCreateView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CommSerializer
+
+    def get_queryset(self):
+        thematique_id = self.kwargs.get('thematique_id')
+        return Comm.objects.filter(
+            thematique_id=thematique_id
+        ).order_by('created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(
+            thematique_id=self.kwargs.get('thematique_id'),
+            user=self.request.user   # ✅ WHO added the comment
+        )
+
+
+
+from rest_framework import generics, parsers
+from rest_framework.permissions import IsAuthenticated
+
+
+class FileListCreateView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = FileSerializer
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+
+    def get_queryset(self):
+        thematique_id = self.kwargs.get('thematique_id')
+        uploaded_by = self.request.query_params.get('uploaded_by')
+        qs = File.objects.filter(thematique_id=thematique_id)
+        if uploaded_by:
+            qs = qs.filter(uploaded_by=uploaded_by)
+        return qs
+
+    def perform_create(self, serializer):
+        thematique_id = self.kwargs.get('thematique_id')
+        uploaded_by = self.request.data.get('uploaded_by')
+        serializer.save(thematique_id=thematique_id, uploaded_by=uploaded_by)
