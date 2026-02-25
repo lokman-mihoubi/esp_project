@@ -243,6 +243,7 @@ export default function Settings() {
             <MenuItem value="admin">Admin</MenuItem>
             <MenuItem value="ministere">Ministère</MenuItem>
             <MenuItem value="dgn">DGN</MenuItem>
+            <MenuItem value="dgl">DGL</MenuItem>
             <MenuItem value="anfu">ANFU</MenuItem>
             <MenuItem value="dgv">DGV</MenuItem>
           </Select>
@@ -286,7 +287,7 @@ export default function Settings() {
                           <MenuItem value="admin">Admin</MenuItem>
                           <MenuItem value="ministere">Ministère</MenuItem>
                           <MenuItem value="dgn">DGN</MenuItem>
-                          <MenuItem value="dgv">DGV</MenuItem>
+                          <MenuItem value="dgl">DGL</MenuItem>
                           <MenuItem value="anfu">ANFU</MenuItem>
                           <MenuItem value="dgv">DGV</MenuItem>
                         </Select>
@@ -344,6 +345,7 @@ export default function Settings() {
             <MenuItem value="ministere">Ministère</MenuItem>
             <MenuItem value="dgn">DGN</MenuItem>
             <MenuItem value="dgv">DGV</MenuItem>
+            <MenuItem value="dgl">DGL</MenuItem>
             <MenuItem value="anfu">ANFU</MenuItem>
           </Select>
 
