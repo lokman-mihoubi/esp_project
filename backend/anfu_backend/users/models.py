@@ -15,13 +15,13 @@ class Profile(models.Model):
     ROLE_CHOICES = (
         ('admin', 'Admin'),
         ('utilisateur', 'Utilisateur'),
-        ('ministere', 'Ministère'),     
-        ('anfu', 'Anfu'),                  # ✅ NEW
-        ('dgl', 'DGL'),                  # ✅ NEW
-        ('dgua', 'Dgua'),                  # ✅ NEW
-        ('dgv', 'DGV'),                  # ✅ NEW
+        ('ministere', 'Ministère'),
+        ('anfu', 'ANFU'),
+        ('dgl', 'DGL'),
+        ('dgua', 'DGUA'),
         ('dgaat', 'DGAAT'),
-        ('dgcmr', 'DGCMR'),                  # ✅ NEW
+        ('dgcmr', 'DGCMR'),
+        ('dgv', 'DGV'),
                          
     )
 
