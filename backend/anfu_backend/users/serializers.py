@@ -154,6 +154,7 @@ WILAYA_TO_REGION = {
 
 import base64
 import mimetypes
+
 class FoncierSerializer(serializers.ModelSerializer):
     geojson_data = serializers.SerializerMethodField()
     predicted_surface = serializers.SerializerMethodField()
@@ -171,11 +172,16 @@ class FoncierSerializer(serializers.ModelSerializer):
         model = Foncier
         fields = "__all__"
         read_only_fields = ['id']
-        
-      # URLs des fichiers pour prévisualisation
+    
+       # URLs des fichiers pour prévisualisation
     duac_file_bytes = serializers.SerializerMethodField()
     dccf_file_bytes = serializers.SerializerMethodField()
     domaine_file_bytes = serializers.SerializerMethodField()
+    
+    
+
+
+   
 
     def _file_to_base64(self, file):
         if not file:
@@ -219,6 +225,9 @@ class FoncierSerializer(serializers.ModelSerializer):
 
     def get_domaine_file_bytes(self, obj):
         return self._file_to_base64(obj.domaine_file)
+
+
+
     # --------------------------------------------------
     # 🔥 FORCE REGION FROM WILAYA (GUARANTEED)
     # --------------------------------------------------
@@ -238,12 +247,13 @@ class FoncierSerializer(serializers.ModelSerializer):
 
         return super().create(validated_data)
 
+
     def update(self, instance, validated_data):
         wilaya = validated_data.get("wilaya", instance.wilaya)
         if wilaya:
             validated_data["region"] = WILAYA_TO_REGION.get(str(wilaya).zfill(2), "DG")
         return super().update(instance, validated_data)
-        
+    
     def validate(self, data):
         # Prevent checkboxes without files
         if data.get('is_confirmed_by_duac') and not data.get('duac_file'):
@@ -253,6 +263,7 @@ class FoncierSerializer(serializers.ModelSerializer):
         if data.get('is_confirmed_by_Domaine') and not data.get('domaine_file'):
             data['is_confirmed_by_Domaine'] = False
         return data
+
     # --------------------------------------------------
     # EXTRA FIELDS
     # --------------------------------------------------
@@ -372,3 +383,88 @@ class HistoriqueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Historique
         fields = ['id', 'action', 'date', 'user']
+
+
+
+
+
+from rest_framework import serializers
+from .models import Space, Etape
+from django.contrib.auth.models import User
+
+class EtapeSerializer(serializers.ModelSerializer):
+    author = serializers.CharField(source='author.username', read_only=True)
+    date = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Etape
+        fields = ['id', 'author', 'text', 'date']
+
+    def get_date(self, obj):
+        return obj.created_at.strftime("%Y-%m-%d %H:%M")
+
+class SpaceSerializer(serializers.ModelSerializer):
+    initiator = serializers.CharField(source='initiator.username', read_only=True)
+    # Now participants are returned as stored codes
+    participants = serializers.ListField(child=serializers.CharField(), read_only=True)
+    etapes = EtapeSerializer(many=True, read_only=True)
+    created_at = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Space
+        fields = ['id', 'title', 'description', 'initiator', 'participants', 'status', 'created_at', 'etapes']
+
+    def get_created_at(self, obj):
+        return obj.created_at.strftime("%Y-%m-%d %H:%M")
+
+
+from rest_framework import serializers
+from .models import Thematique, Comm,File
+
+class ThematiqueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Thematique
+        fields = ['id', 'name', 'espace']
+
+# class CommSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Comm
+#         fields = ['id', 'thematique', 'text', 'created_at']
+#         read_only_fields = ['thematique', 'created_at']
+
+
+
+class CommSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
+
+    class Meta:
+        model = Comm
+        fields = [
+            'id',
+            'thematique',
+            'user',
+            'username',   # 👈 displayed in frontend
+            'text',
+            'created_at'
+        ]
+        read_only_fields = ['thematique', 'user', 'created_at']
+
+class FileSerializer(serializers.ModelSerializer):
+    file_name = serializers.SerializerMethodField()
+    bytes = serializers.SerializerMethodField()  # new field
+
+    class Meta:
+        model = File
+        fields = ['id', 'thematique', 'uploaded_by', 'file', 'file_name', 'uploaded_at', 'bytes']
+        read_only_fields = ['thematique', 'uploaded_by', 'uploaded_at']
+
+    def get_file_name(self, obj):
+        return obj.file.name.split('/')[-1]
+
+    def get_bytes(self, obj):
+        if obj.file and obj.file.name:
+            obj.file.open('rb')
+            data = obj.file.read()
+            obj.file.close()
+            return list(data)  # send as list of integers
+        return []
