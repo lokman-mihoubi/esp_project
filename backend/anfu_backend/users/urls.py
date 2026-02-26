@@ -17,7 +17,11 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path("users/", UserListView.as_view(), name="user-list"),
-    path("users/<int:pk>/role/", UserRoleUpdateView.as_view(), name="user-role-update"),
+    # path("users/<int:pk>/role/", UserRoleUpdateView.as_view(), name="user-role-update"),
+    path("users/<int:user_id>/role/",UserRoleUpdateView.as_view()),
+    
+    
+
     path("users/<int:pk>/permissions/", UpdateUserPermissionsView.as_view(), name="update-user-permissions"),
 
     path('fonciers/', FoncierListCreateView.as_view(), name='foncier-list-create'),
