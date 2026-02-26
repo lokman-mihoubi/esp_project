@@ -427,18 +427,19 @@ class SpaceSerializer(serializers.ModelSerializer):
 
 from rest_framework import serializers
 from .models import Thematique, Comm,File
+from rest_framework import serializers
+from .models import Thematique
 
 class ThematiqueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Thematique
-        fields = ['id', 'name', 'espace']
-
-# class CommSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Comm
-#         fields = ['id', 'thematique', 'text', 'created_at']
-#         read_only_fields = ['thematique', 'created_at']
-
+        fields = [
+            'id',
+            'name',
+            'espace',
+            'relation_type',  # Ajouté
+            'priority'        # Ajouté
+        ]
 
 
 class CommSerializer(serializers.ModelSerializer):
