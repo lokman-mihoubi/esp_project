@@ -68,7 +68,7 @@ export default function AuthPage() {
     if (role === "anfu" || role === "ministere" || role === "dgv"
          || role === "dgl" || role === "dgcmr" || role === "dgua" || role === "dgaat" 
     ) {
-      router.push("/dashboard1");
+      router.push("/dashboard1/");
     } else {
       router.push("/dashboard");
     }
