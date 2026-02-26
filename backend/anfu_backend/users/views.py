@@ -169,6 +169,8 @@ class UserRoleUpdateView(UpdateAPIView):
     def get_queryset(self):
         return Profile.objects.all()
 
+        
+
 class UserListView(APIView):
     # permission_classes = [IsAuthenticated]  
 
@@ -1279,8 +1281,17 @@ from .models import Thematique, Comm,File
 from .serializers import ThematiqueSerializer, CommSerializer,FileSerializer
 
 # List and create thematiques
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from .models import Thematique
+from .serializers import ThematiqueSerializer
+
+# ----------------------------------------
+# List & Create
+# ----------------------------------------
 class ThematiqueListCreateView(generics.ListCreateAPIView):
     serializer_class = ThematiqueSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         espace = self.request.query_params.get('espace')
@@ -1289,18 +1300,23 @@ class ThematiqueListCreateView(generics.ListCreateAPIView):
         return Thematique.objects.all()
 
 
-# List and create comments for a given thematique
-# class CommListCreateView(generics.ListCreateAPIView):
-#     permission_classes = [IsAuthenticated]
-#     serializer_class = CommSerializer
+# ----------------------------------------
+# Retrieve & Update
+# ----------------------------------------
+class ThematiqueRetrieveUpdateView(generics.RetrieveUpdateAPIView):
+    queryset = Thematique.objects.all()
+    serializer_class = ThematiqueSerializer
+    permission_classes = [IsAuthenticated]
 
-#     def get_queryset(self):
-#         thematique_id = self.kwargs.get('thematique_id')
-#         return Comm.objects.filter(thematique_id=thematique_id).order_by('created_at')
 
-#     def perform_create(self, serializer):
-#         thematique_id = self.kwargs.get('thematique_id')
-#         serializer.save(thematique_id=thematique_id)
+# ----------------------------------------
+# Delete
+# ----------------------------------------
+class ThematiqueDeleteView(generics.DestroyAPIView):
+    queryset = Thematique.objects.all()
+    serializer_class = ThematiqueSerializer
+    permission_classes = [IsAuthenticated]
+
 
 
 class CommListCreateView(generics.ListCreateAPIView):
