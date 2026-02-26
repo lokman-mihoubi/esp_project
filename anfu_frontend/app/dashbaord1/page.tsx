@@ -14,8 +14,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
-
+import { DataGrid ,GridPaginationModel} from '@mui/x-data-grid';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import BusinessIcon from '@mui/icons-material/Business';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
@@ -33,11 +32,35 @@ import SmallNavbar from "./SmallNavbar";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 type EspaceCode = 'DGL' | 'DGV' | 'DGUA' | 'DGCMR' | 'DGAAT' | 'COMMUN';
+type RelationType = 'ANFU' | 'ONE' | 'BOTH';
+type Priority = 1 | 2 | 3;
+ // Relation display
+const displayRelation = (relation: RelationType, espace: EspaceCode) => {
+  if (relation === 'ANFU') return 'ANFU';
+  if (relation === 'BOTH') return `ANFU + ${espace}`;
+  return espace; // 'ONE' case
+};
+
+const displayPriority = (priority: Priority) => {
+  switch (priority) {
+    case 3:
+      return 'Élevée';
+    case 2:
+      return 'Moyenne';
+    case 1:
+      return 'Faible';
+    default:
+      return '';
+  }
+};
+
 
 interface Thematique {
   id: number;
   name: string;
   espace: EspaceCode;
+  relation_type: RelationType;
+  priority: Priority;
 }
 
 interface Comment {
@@ -65,6 +88,12 @@ export default function DashboardPage() {
   const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: UploadedFile[] }>({});
   const [userRole, setUserRole] = useState<'ANFU' | EspaceCode | ''>('');
   const [username, setUsername] = useState<string>(''); // <-- NEW
+
+  
+  const [newRelationType, setNewRelationType] = useState<RelationType>('ANFU');
+  const [newPriority, setNewPriority] = useState<Priority>(3);
+  
+
   // ---------------- ROLE ----------------
   useEffect(() => {
   if (typeof window !== "undefined") { // make sure localStorage is available
@@ -93,24 +122,58 @@ export default function DashboardPage() {
  
   // ---------------- THEMES ----------------
   const fetchThematiques = async (espace: EspaceCode) => {
-    try {
-      const res = await axios.get(`${API_URL}/auth/themes/?espace=${espace}`);
+  if (!espace) return;
+
+  try {
+    const token = localStorage.getItem('access');
+    const res = await axios.get(`${API_URL}/auth/themes/`, {
+      params: { espace }, // ?espace=DGL
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+
+    if (Array.isArray(res.data)) {
       setThematiques(res.data);
-    } catch (err) {
-      console.error('Error fetching thematiques:', err);
+    } else {
+      console.warn('Unexpected response format:', res.data);
+      setThematiques([]);
     }
-  };
-  
-  const addTheme = async () => {
-    if (!newTheme.trim() || !selectedEspace) return;
-    try {
-      await axios.post(`${API_URL}/auth/themes/`, { name: newTheme, espace: selectedEspace });
-      setNewTheme('');
-      fetchThematiques(selectedEspace);
-    } catch (err) {
-      console.error('Error adding theme:', err);
-    }
-  };
+  } catch (err) {
+    console.error('Error fetching thematiques:', err);
+    setThematiques([]);
+  }
+};
+ 
+ const addTheme = async () => {
+  if (!newTheme.trim() || !selectedEspace) return;
+
+  try {
+    const token = localStorage.getItem('access');
+    if (!token) throw new Error('No access token found');
+
+    const payload = {
+      name: newTheme.trim(),
+      espace: selectedEspace,
+      relation_type: newRelationType,
+      priority: newPriority,
+    };
+
+    const res = await axios.post(`${API_URL}/auth/themes/`, payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    console.log('Theme added:', res.data);
+
+    // Clear inputs
+    setNewTheme('');
+    setNewRelationType('ANFU');
+    setNewPriority(3);
+
+    // Refresh the list automatically
+    fetchThematiques(selectedEspace);
+  } catch (err) {
+    console.error('Error adding theme:', err);
+  }
+};
 
   const handleCardClick = (code: EspaceCode) => {
     setSelectedEspace(code);
@@ -145,6 +208,45 @@ export default function DashboardPage() {
       console.error('Error adding comment:', err);
     }
   };
+
+  // ---------------- COLUMNS FOR DATAGRID ----------------
+const columns = [
+  { field: 'id', headerName: 'ID', width: 70 },
+  { field: 'name', headerName: 'Nom Thématique', flex: 1 },
+
+  {
+    field: 'relation',
+    headerName: 'Actionneur',
+    flex: 1,
+    // Use renderCell instead of valueGetter for simplicity
+    renderCell: (params: any) => {
+      const { relation_type, espace } = params.row;
+      if (relation_type === 'ANFU') return 'ANFU';
+      if (relation_type === 'BOTH') return `ANFU + ${espace}`;
+      if (relation_type === 'ONE') return espace;
+      return '';
+    },
+  },
+
+  {
+    field: 'priority',
+    headerName: 'Priorité',
+    width: 120,
+    renderCell: (params: any) => {
+      const { priority } = params.row;
+      if (priority === 3) return 'Élevée';
+      if (priority === 2) return 'Moyenne';
+      if (priority === 1) return 'Faible';
+      return '';
+    },
+  },
+
+  { field: 'espace', headerName: 'Espace', width: 120 },
+];
+const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+  page: 0,
+  pageSize: 5,
+});
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -324,35 +426,61 @@ const handleChangePassword = () => {
               <Typography color="textPrimary">{selectedEspace}</Typography>
             </Breadcrumbs>
 
-            <Box className="mb-4 flex gap-2">
-              <TextField
-                size="small"
-                fullWidth
-                placeholder="Ajouter une nouvelle thématique"
-                value={newTheme}
-                onChange={(e) => setNewTheme(e.target.value)}
-              />
-              <Button variant="contained" sx={{ backgroundColor: '#1C5844' }} onClick={addTheme}>
-                Ajouter
-              </Button>
-            </Box>
+           <Box className="mb-4 flex gap-2 items-end">
+  <TextField
+    size="small"
+    fullWidth
+    placeholder="Nom de la thématique"
+    value={newTheme}
+    onChange={(e) => setNewTheme(e.target.value)}
+  />
 
-            <Box sx={{ height: 400, width: '100%' }}>
-            <DataGrid
-              rows={thematiques}
-              columns={[
-                { field: 'id', headerName: 'ID', width: 70 },
-                { field: 'name', headerName: 'Nom Thématique', flex: 1 },
-                { field: 'espace', headerName: 'Espace', width: 120 },
-              ]}
-              pagination
-              paginationModel={{ page: 0, pageSize: 5 }}
-              onPaginationModelChange={(model) => console.log('New pagination model:', model)}
-              pageSizeOptions={[5, 10, 20]} // replaces rowsPerPageOptions
-              disableRowSelectionOnClick
-              onRowClick={(params) => openBigCollab(params.row as Thematique)}
-              getRowId={(row) => row.id}
-            />
+  <TextField
+    select
+    size="small"
+    label="Relation"
+    value={newRelationType}
+    onChange={(e) => setNewRelationType(e.target.value as RelationType)}
+  >
+    <MenuItem value="ANFU">ANFU seul</MenuItem>
+    <MenuItem value="ONE">Autre institution seule</MenuItem>
+    <MenuItem value="BOTH">ANFU + institution</MenuItem>
+  </TextField>
+
+  <TextField
+    select
+    size="small"
+    label="Priorité"
+    value={newPriority}
+    onChange={(e) => setNewPriority(Number(e.target.value) as Priority)}
+  >
+    <MenuItem value={3}>Élevé</MenuItem>
+    <MenuItem value={2}>Moyenne</MenuItem>
+    <MenuItem value={1}>Faible</MenuItem>
+  </TextField>
+
+  <Button
+    variant="contained"
+    sx={{ backgroundColor: '#1C5844' }}
+    onClick={addTheme}
+  >
+    Ajouter
+  </Button>
+</Box>
+
+    <Box sx={{ height: 400, width: '100%' }}>
+      <DataGrid
+  rows={thematiques}
+  columns={columns}
+  autoHeight
+  pagination
+  paginationModel={paginationModel}
+  onPaginationModelChange={setPaginationModel}
+  pageSizeOptions={[5, 10, 20]}
+  disableRowSelectionOnClick
+  onRowClick={(params) => openBigCollab(params.row)}
+  getRowId={(row) => row.id}
+/>
           </Box>
           </Box>
         )}
