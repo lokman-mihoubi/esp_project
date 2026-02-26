@@ -476,14 +476,62 @@ ESPACES_CHOICES = [
     ('COMMUN', 'Espace Commun Inter-Institutions'),
 ]
 
+from django.db import models
+
+# ESPACES_CHOICES = [
+#     ('ANFU', 'Agence Nationale du Foncier Urbain'),
+#     ('DGL', 'Direction Générale du Logement'),
+#     ('DGV', 'Direction Générale de la Ville'),
+#     ('DGUA', 'Direction Générale de l’Urbanisme'),
+#     ('DGCMR', 'Direction Générale du Cadastre'),
+#     ('DGAAT', 'Direction Générale de l’Aménagement du Territoire'),
+#     ('COMMUN', 'Espace Commun Inter-Institutions'),
+# ]
+
+
+
+from django.db import models
+
+ESPACES_CHOICES = [
+    ('DGL', 'DGL'),
+    ('DGV', 'DGV'),
+    ('DGUA', 'DGUA'),
+    ('DGCMR', 'DGCMR'),
+    ('DGAAT', 'DGAAT'),
+    ('COMMUN', 'COMMUN'),
+]
+
+RELATION_TYPES = [
+    ('ANFU', 'ANFU'),
+    ('ONE', 'Autre institution'),
+    ('BOTH', 'ANFU + Institution'),
+]
+
+PRIORITY_CHOICES = [
+    (1, 'Faible'),
+    (2, 'Moyenne'),
+    (3, 'Élevé'),
+]
+
 class Thematique(models.Model):
     name = models.CharField(max_length=255)
     espace = models.CharField(max_length=10, choices=ESPACES_CHOICES)
 
+    # Type de relation
+    relation_type = models.CharField(
+        max_length=10,
+        choices=RELATION_TYPES,
+        default='ANFU'
+    )
+
+    # Priorité
+    priority = models.PositiveSmallIntegerField(
+        choices=PRIORITY_CHOICES,
+        default=3
+    )
+
     def __str__(self):
-        return f"{self.espace} - {self.name}"
-
-
+        return f"{self.espace} - {self.name} | {self.relation_type} | P{self.priority}"
 class Comm(models.Model):
     thematique = models.ForeignKey(Thematique, on_delete=models.CASCADE, related_name='comments')
     text = models.TextField()
