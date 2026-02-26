@@ -7,7 +7,7 @@ from .views import (
     RegisterView, LoginView, LogoutView,UserListView,UpdateUserPermissionsView,UserDeleteView,
     FoncierListCreateView, FoncierDetailView,
     StepCreateView, TaskCreateView, FoncierStepsView,StepDetailUpdateView,CurrentUserView,FoncierListCreateUpdateView,ChatUserListView,
-    TaskDocumentUploadView,SpaceListCreateView,ChangePasswordView,FileListCreateView,ThematiqueListCreateView, CommListCreateView, EtapeCreateView, SpaceDetailView,FoncierDeleteAllView,UsageListCreateView,TaskDocumentByteView,DocumentDownloadView,TaskCommentsView,FoncierStatisticsView,FoncierWilayaStatsView,EventListCreateView, FoncierAISummaryView,EventDeleteView,TaskUserRemoveView,UnreadMessageCountView,TaskDeleteView,ChatMessageListView,ChatUserListView, CurrentUserView, SendMessageView,CurrentUserView,EventUpdateView,Message1ListCreateView,TaskUpdateView,HistoriqueListCreateView
+    TaskDocumentUploadView,SpaceListCreateView,ThematiqueRetrieveUpdateView,ThematiqueDeleteView,ChangePasswordView,FileListCreateView,ThematiqueListCreateView, CommListCreateView, EtapeCreateView, SpaceDetailView,FoncierDeleteAllView,UsageListCreateView,TaskDocumentByteView,DocumentDownloadView,TaskCommentsView,FoncierStatisticsView,FoncierWilayaStatsView,EventListCreateView, FoncierAISummaryView,EventDeleteView,TaskUserRemoveView,UnreadMessageCountView,TaskDeleteView,ChatMessageListView,ChatUserListView, CurrentUserView, SendMessageView,CurrentUserView,EventUpdateView,Message1ListCreateView,TaskUpdateView,HistoriqueListCreateView
 )
 from .views import download_document
  
@@ -83,11 +83,31 @@ urlpatterns = [
     path('spaces/', SpaceListCreateView.as_view(), name='spaces-list-create'),
     path('spaces/<int:space_id>/', SpaceDetailView.as_view(), name='space-detail'),
     path('spaces/<int:space_id>/etapes/', EtapeCreateView.as_view(), name='space-add-etape'),
+      
 
 
+    
+
+
+    # path('themes/', ThematiqueListCreateView.as_view(), name='themes-list-create'),
+    # path('themes/<int:thematique_id>/commts/', CommListCreateView.as_view(), name='theme-comments'),
+
+    # path('themes/<int:thematique_id>/files/', FileListCreateView.as_view()),
+    path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+
+
+
+     # ------------------- Thematique CRUD -------------------
+    # Liste + Création
     path('themes/', ThematiqueListCreateView.as_view(), name='themes-list-create'),
-    path('themes/<int:thematique_id>/commts/', CommListCreateView.as_view(), name='theme-comments'),
 
+    # Détails + Update
+    path('themes/<int:pk>/', ThematiqueRetrieveUpdateView.as_view(), name='theme-detail-update'),
+
+    # Delete
+    path('themes/<int:pk>/delete/', ThematiqueDeleteView.as_view(), name='theme-delete'),
+
+    # Commentaires et fichiers liés à une thématique
+    path('themes/<int:thematique_id>/commts/', CommListCreateView.as_view(), name='theme-comments'),
     path('themes/<int:thematique_id>/files/', FileListCreateView.as_view()),
-     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
 ]
