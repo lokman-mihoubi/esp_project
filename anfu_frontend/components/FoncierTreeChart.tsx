@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { SimpleTreeView, TreeItem } from "@mui/x-tree-view";
+import { TreeView, TreeItem } from "@mui/lab";
 import {
   Box,
   Typography,
@@ -11,12 +11,14 @@ import {
   Select,
   MenuItem,
   Slider,
+  Button,
 } from "@mui/material";
-import { Foncier } from "@/types";
-import { WILAYAS } from "@/types/wilayas";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { Button } from "@mui/material";
+import { Foncier } from "@/types";
+import { WILAYAS } from "@/types/wilayas";
 
 /* ------------ HELPERS ------------ */
 const branch = (type: "mid" | "last", length = 22) =>
@@ -30,11 +32,11 @@ export default function FoncierTreeChart({ fonciers }: FoncierTreeChartProps) {
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
   const [selectedType, setSelectedType] = React.useState("all");
   const [selectedWilaya, setSelectedWilaya] = React.useState("all");
-  const [viabilisationRange, setViabilisationRange] = React.useState<number[]>([
-    0, 100,
-  ]);
+  const [viabilisationRange, setViabilisationRange] = React.useState<number[]>([0, 100]);
 
-  /* ------------ FILTER ------------ */
+  const treeRef = React.useRef<HTMLDivElement>(null);
+
+  /* ------------ FILTERED DATA ------------ */
   const filteredFonciers = React.useMemo(() => {
     return fonciers.filter((f) => {
       if (selectedType !== "all" && f.type !== selectedType) return false;
@@ -44,26 +46,18 @@ export default function FoncierTreeChart({ fonciers }: FoncierTreeChartProps) {
     });
   }, [fonciers, selectedType, selectedWilaya, viabilisationRange]);
 
-  /* ------------ GROUP ------------ */
+  /* ------------ GROUP DATA ------------ */
   const grouped = React.useMemo(() => {
     const result: Record<
       string,
-      Record<
-        string,
-        { total: number; transmis: number; publie: number; termine: number }
-      >
+      Record<string, { total: number; transmis: number; publie: number; termine: number }>
     > = {};
 
     filteredFonciers.forEach((f) => {
       if (!f.type || !f.wilaya) return;
 
       result[f.type] ??= {};
-      result[f.type][f.wilaya] ??= {
-        total: 0,
-        transmis: 0,
-        publie: 0,
-        termine: 0,
-      };
+      result[f.type][f.wilaya] ??= { total: 0, transmis: 0, publie: 0, termine: 0 };
 
       const s = result[f.type][f.wilaya];
       s.total++;
@@ -74,25 +68,21 @@ export default function FoncierTreeChart({ fonciers }: FoncierTreeChartProps) {
 
     return result;
   }, [filteredFonciers]);
-  const treeRef = React.useRef<HTMLDivElement>(null);
 
+  /* ------------ DOWNLOAD PDF ------------ */
   const downloadPDF = async () => {
-  if (!treeRef.current) return;
+    if (!treeRef.current) return;
 
-  const canvas = await html2canvas(treeRef.current, {
-    scale: 2,
-    backgroundColor: "#ffffff",
-  });
+    const canvas = await html2canvas(treeRef.current, { scale: 2, backgroundColor: "#ffffff" });
+    const imgData = canvas.toDataURL("image/png");
 
-  const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const imgHeight = (canvas.height * pageWidth) / canvas.width;
 
-  const pdf = new jsPDF("p", "mm", "a4");
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const imgHeight = (canvas.height * pageWidth) / canvas.width;
-
-  pdf.addImage(imgData, "PNG", 0, 10, pageWidth, imgHeight);
-  pdf.save("foncier-tree.pdf");
-};
+    pdf.addImage(imgData, "PNG", 0, 10, pageWidth, imgHeight);
+    pdf.save("foncier-tree.pdf");
+  };
 
   return (
     <Box>
@@ -103,12 +93,7 @@ export default function FoncierTreeChart({ fonciers }: FoncierTreeChartProps) {
           <Select value={selectedType} onChange={(e) => setSelectedType(e.target.value)}>
             <MenuItem value="all">All</MenuItem>
             {[...new Set(fonciers.map((f) => f.type))].map(
-              (type) =>
-                type && (
-                  <MenuItem key={type} value={type}>
-                    {type}
-                  </MenuItem>
-                )
+              (type) => type && <MenuItem key={type} value={type}>{type}</MenuItem>
             )}
           </Select>
         </FormControl>
@@ -118,9 +103,7 @@ export default function FoncierTreeChart({ fonciers }: FoncierTreeChartProps) {
           <Select value={selectedWilaya} onChange={(e) => setSelectedWilaya(e.target.value)}>
             <MenuItem value="all">All</MenuItem>
             {WILAYAS.map((w) => (
-              <MenuItem key={w.code} value={w.code}>
-                {w.name}
-              </MenuItem>
+              <MenuItem key={w.code} value={w.code}>{w.name}</MenuItem>
             ))}
           </Select>
         </FormControl>
@@ -135,133 +118,76 @@ export default function FoncierTreeChart({ fonciers }: FoncierTreeChartProps) {
             max={100}
           />
         </Box>
+
+        <Button variant="contained" onClick={downloadPDF}>
+          Download PDF
+        </Button>
       </Box>
-      <Button variant="contained" onClick={downloadPDF}>
-  Download PDF
-</Button>
 
       {/* ------------ TREE ------------ */}
       <Box ref={treeRef}>
-      <SimpleTreeView
-        expandedItems={expandedItems}
-        onExpandedItemsChange={(_, items) => setExpandedItems(items)}
-      >
-        <TreeItem itemId="foncier-root" label="🏗️ Foncier">
-          {Object.entries(grouped).map(([type, wilayas], i, tArr) => {
-            const isLastType = i === tArr.length - 1;
-            const typeId = `type-${type}`;
+        <TreeView
+          expanded={expandedItems}
+          onNodeToggle={(_, items) => setExpandedItems(items)}
+          defaultCollapseIcon={<ExpandMoreIcon />}
+          defaultExpandIcon={<ChevronRightIcon />}
+        >
+          <TreeItem nodeId="foncier-root" label="🏗️ Foncier">
+            {Object.entries(grouped).map(([type, wilayas], i, tArr) => {
+              const isLastType = i === tArr.length - 1;
+              const typeId = `type-${type}`;
 
-            return (
-              <TreeItem
-                key={typeId}
-                itemId={typeId}
-                label={
-                  <Box sx={{ fontFamily: "monospace", ml: 1 }}>
-                    {branch(isLastType ? "last" : "mid", 26)} 📁{" "}
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </Box>
-                }
-              >
-                {Object.entries(wilayas).map(([wilayaCode, stats], j, wArr) => {
-                  const isLastWilaya = j === wArr.length - 1;
-                  const wilayaName =
-                    WILAYAS.find(
-                      (w) => w.code === wilayaCode || w.name === wilayaCode
-                    )?.name || wilayaCode;
+              return (
+                <TreeItem key={typeId} nodeId={typeId} label={<Label text={type} type={isLastType ? "last" : "mid"} indent={1} />}>
+                  {Object.entries(wilayas).map(([wilayaCode, stats], j, wArr) => {
+                    const isLastWilaya = j === wArr.length - 1;
+                    const wilayaName = WILAYAS.find(w => w.code === wilayaCode)?.name || wilayaCode;
+                    const wilayaId = `${typeId}-wilaya-${wilayaCode}`;
 
-                  const wilayaId = `${typeId}-wilaya-${wilayaCode}`;
+                    return (
+                      <TreeItem key={wilayaId} nodeId={wilayaId} label={<Label text={`${wilayaName} (${stats.total})`} type={isLastWilaya ? "last" : "mid"} indent={2} />}>
+                        <Branch label="Transmis" value={stats.transmis} parentId={wilayaId} />
+                        <Branch label="Publié" value={stats.publie} parentId={wilayaId} />
+                        <Branch label="Terminé" value={stats.termine} parentId={wilayaId} />
 
-                  /* ---- VIABILISATION STATS ---- */
-                  const viabs = filteredFonciers.filter(
-                    (f) =>
-                      f.type === type &&
-                      f.wilaya === wilayaCode &&
-                      f.progress_viabilisation !== undefined
-                  );
-
-                  const ranges = [
-                    { label: "0%", min: 0, max: 0 },
-                    { label: "1–30%", min: 1, max: 30 },
-                    { label: "31–70%", min: 31, max: 70 },
-                    { label: "71–100%", min: 71, max: 100 },
-                  ];
-
-                  return (
-                    <TreeItem
-                      key={wilayaId}
-                      itemId={wilayaId}
-                      label={
-                        <Box sx={{ fontFamily: "monospace", ml: 2 }}>
-                          {branch(isLastWilaya ? "last" : "mid", 20)} 📍{" "}
-                          {wilayaName} ({stats.total})
-                        </Box>
-                      }
-                    >
-                      <Collapse in={expandedItems.includes(wilayaId)} timeout="auto">
-                        <Branch parentId={wilayaId} label="Transmis" value={stats.transmis} type="mid" />
-                        <Branch parentId={wilayaId} label="Publié" value={stats.publie} type="mid" />
-                        <Branch parentId={wilayaId} label="Terminé" value={stats.termine} type="mid" />
-
-                        {/* ---- TAUX DE VIABILISATION ---- */}
-                        <TreeItem
-                          itemId={`${wilayaId}-viabilisation`}
-                          label={
-                            <Box sx={{ fontFamily: "monospace", ml: 3 }}>
-                              {branch("last", 18)} 🧪 Taux de viabilisation
-                            </Box>
-                          }
-                        >
-                          {ranges.map((r, idx) => {
-                            const count = viabs.filter(
-                              (f) =>
-                                (f.progress_viabilisation ?? 0) >= r.min &&
-                                (f.progress_viabilisation ?? 0) <= r.max
+                        {/* Viabilisation */}
+                        <TreeItem nodeId={`${wilayaId}-viabilisation`} label={<Label text="🧪 Taux de viabilisation" type="last" indent={3} />}>
+                          {[
+                            { label: "0%", min: 0, max: 0 },
+                            { label: "1–30%", min: 1, max: 30 },
+                            { label: "31–70%", min: 31, max: 70 },
+                            { label: "71–100%", min: 71, max: 100 },
+                          ].map((r, idx) => {
+                            const count = filteredFonciers.filter(
+                              f => f.type === type && f.wilaya === wilayaCode && (f.progress_viabilisation ?? 0) >= r.min && (f.progress_viabilisation ?? 0) <= r.max
                             ).length;
-
-                            return (
-                              <Branch
-                                key={`${wilayaId}-${r.label}`}
-                                parentId={`${wilayaId}-viabilisation`}
-                                label={r.label}
-                                value={count}
-                                type={idx === ranges.length - 1 ? "last" : "mid"}
-                                indent={4}
-                              />
-                            );
+                            return <Branch key={`${wilayaId}-${r.label}`} label={r.label} value={count} parentId={`${wilayaId}-viabilisation`} type={idx === 3 ? "last" : "mid"} indent={4} />;
                           })}
                         </TreeItem>
-                      </Collapse>
-                    </TreeItem>
-                  );
-                })}
-              </TreeItem>
-            );
-          })}
-        </TreeItem>
-      </SimpleTreeView>
-</Box>
-      
+                      </TreeItem>
+                    );
+                  })}
+                </TreeItem>
+              );
+            })}
+          </TreeItem>
+        </TreeView>
+      </Box>
     </Box>
   );
 }
 
 /* ------------ BRANCH COMPONENT ------------ */
-function Branch({
-  parentId,
-  label,
-  value,
-  type,
-  indent = 3,
-}: {
-  parentId: string;
+function Branch({ label, value, parentId, type = "mid", indent = 3 }: {
   label: string;
   value: number;
-  type: "mid" | "last";
+  parentId: string;
+  type?: "mid" | "last";
   indent?: number;
 }) {
   return (
     <TreeItem
-      itemId={`${parentId}-${label}`}
+      nodeId={`${parentId}-${label}`}
       label={
         <Box
           sx={{
@@ -271,10 +197,7 @@ function Branch({
             justifyContent: "space-between",
             width: 420,
             transition: "all 0.2s ease",
-            "&:hover": {
-              backgroundColor: "#f5f5f5",
-              transform: "scale(1.02)",
-            },
+            "&:hover": { backgroundColor: "#f5f5f5", transform: "scale(1.02)" },
           }}
         >
           <span>{branch(type, 16)} {label}</span>
@@ -282,5 +205,14 @@ function Branch({
         </Box>
       }
     />
+  );
+}
+
+/* ------------ LABEL HELPER ------------ */
+function Label({ text, type = "mid", indent = 0 }: { text: string; type?: "mid" | "last"; indent?: number }) {
+  return (
+    <Box sx={{ fontFamily: "monospace", ml: indent * 2 }}>
+      {branch(type, 20)} {text}
+    </Box>
   );
 }
