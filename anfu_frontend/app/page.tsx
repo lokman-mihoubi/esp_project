@@ -94,7 +94,7 @@ export default function AuthPage() {
       <div
         className="md:w-1/2 w-full flex flex-col justify-center items-center text-white p-10 relative overflow-hidden"
         style={{
-          backgroundImage: "url('/cover-anfu.png')",
+          backgroundImage: "url('/agence.jpg')",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -102,10 +102,10 @@ export default function AuthPage() {
         <div className="absolute inset-0 bg-[#1C5844]/80"></div>
         <div className="relative z-10 text-center px-6">
           <h1 className="text-4xl font-bold mb-4 uppercase tracking-wide">
-            Agence Nationale du Foncier Urbain
+            Ministère de l'Habitat, de l'Urbanisme , de la Ville et de l'Aménagement du territoire
           </h1>
           <p className="text-lg opacity-90 font-light">
-            Plateforme de gestion du foncier
+            Agence National du Foncier Urbain -Espace de Coordination
           </p>
           <a
             href="https://www.anfu.dz"
@@ -122,7 +122,7 @@ export default function AuthPage() {
       <div className="md:w-1/2 w-full flex flex-col justify-center items-center bg-white p-8 shadow-lg">
         <div className="mb-6 flex justify-center">
           <Image
-            src="/anfu3.png"
+            src="/min.svg"
             alt="Logo ANFU"
             width={220}
             height={220}

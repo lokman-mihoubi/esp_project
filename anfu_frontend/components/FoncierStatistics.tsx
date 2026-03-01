@@ -23,7 +23,6 @@ import GenerateReportDialog from "@/components/GenerateReportDialog";
 import AIReportDialog from "@/components/AIReportDialog";
 import MonthlySurfaceCalendarChart from "@/components/MonthlySurfaceCalendarChart";
 import InvestissementByUsageChart from "@/components/InvestissementByUsageChart";
-import FoncierTreeChart from "@/components/FoncierTreeChart";
 
 /* ------------------ CONSTANTS ------------------- */
 
@@ -501,9 +500,6 @@ const surfaceAndProjetData = useMemo(() => {
 
 <div className="col-span-2">
   <InvestissementByUsageChart fonciers={fonciers} />
-</div>
-<div className="col-span-2">
-  <FoncierTreeChart fonciers={fonciers} />
 </div>
 
 
