@@ -841,27 +841,55 @@ const markViewed = async (fileId: number) => {
   ) : (uploadedFiles[selectedEspace] || []).length === 0 ? (
     <p className="text-gray-400 text-sm">Aucun document</p>
   ) : (
-    uploadedFiles[selectedEspace].map((f) => (
-      <div key={f.id}>
-  📎 {f.name}
-  <p className="text-xs text-gray-500">
-    {formatTimeAgo(f.uploaded_at)}
-  </p>
+    <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
+      {uploadedFiles[selectedEspace].map((f) => (
+        <div
+          key={f.id}
+          className="border rounded-xl p-4 shadow-sm hover:shadow-md transition bg-white flex flex-col justify-between"
+        >
+          <p className="font-semibold text-sm truncate">📄 {f.name}</p>
 
-  <Button size="small" onClick={() => downloadFile(f)}>
-    Télécharger
-  </Button>
-  <Button
-    size="small"
-    onClick={() => {
-      setViewFile(f);
-      setViewDialogOpen(true);
-    }}
-  >
-    Voir
-  </Button>
-</div>
-    ))
+          <p className="text-xs text-gray-500 mb-2">
+            {formatTimeAgo(f.uploaded_at)}
+          </p>
+
+          <div className="flex gap-2 mt-auto">
+            <Button
+              size="small"
+              variant="outlined"
+              sx={{
+                color: '#1C5844',
+                borderColor: '#1C5844',
+                '&:hover': {
+                  borderColor: '#144233',
+                  backgroundColor: 'rgba(28, 88, 68, 0.1)',
+                },
+              }}
+              onClick={() => downloadFile(f)}
+            >
+              Télécharger
+            </Button>
+
+            <Button
+              size="small"
+              variant="contained"
+              sx={{
+                backgroundColor: '#1C5844',
+                '&:hover': {
+                  backgroundColor: '#144233',
+                },
+              }}
+              onClick={() => {
+                setViewFile(f);
+                setViewDialogOpen(true);
+              }}
+            >
+              Voir
+            </Button>
+          </div>
+        </div>
+      ))}
+    </div>
   )}
 </div>
           </div>
