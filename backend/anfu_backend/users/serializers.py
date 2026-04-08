@@ -430,18 +430,45 @@ from .models import Thematique, Comm,File
 from rest_framework import serializers
 from .models import Thematique
 
+from rest_framework import serializers
+from .models import Thematique
+
+from rest_framework import serializers
+from .models import Thematique, File
 class ThematiqueSerializer(serializers.ModelSerializer):
+    new_files_count = serializers.SerializerMethodField()
+    new_files_uploaders = serializers.SerializerMethodField()
+
     class Meta:
         model = Thematique
         fields = [
             'id',
             'name',
             'espace',
-            'relation_type',  # Ajouté
-            'priority'        # Ajouté
+            'relation_type',
+            'priority',
+            'new_files_count',
+            'new_files_uploaders',
         ]
 
+    def get_new_files_count(self, obj):
+        request = self.context.get('request')
+        if request and request.user:
+            user = request.user
+            # exclude files viewed by the current user
+            return obj.files.exclude(views__user=user).count()
+        return obj.files.count()
 
+    def get_new_files_uploaders(self, obj):
+        request = self.context.get('request')
+        if request and request.user:
+            user = request.user
+            # get distinct uploaders of files NOT viewed by current user
+            return list(obj.files.exclude(views__user=user)
+                            .values_list('uploaded_by', flat=True)
+                            .distinct())
+        return list(obj.files.values_list('uploaded_by', flat=True).distinct())
+        
 class CommSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
 
@@ -476,3 +503,5 @@ class FileSerializer(serializers.ModelSerializer):
             obj.file.close()
             return list(data)  # send as list of integers
         return []
+
+        
