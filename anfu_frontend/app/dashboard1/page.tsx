@@ -80,6 +80,7 @@ interface UploadedFile {
   name: string;
   bytes: Uint8Array;
   uploaded_by: 'ANFU' | EspaceCode;
+  uploaded_at: string;
 }
 
 export default function DashboardPage() {
@@ -517,6 +518,7 @@ const fetchFiles = async (
       name: f.file_name,
       bytes: new Uint8Array(f.bytes),
       uploaded_by: f.uploaded_by,
+      uploaded_at: f.uploaded_at,
     }));
 
     // ✅ SAFE MERGE
@@ -762,22 +764,45 @@ const markViewed = async (fileId: number) => {
           key={f.id}
           className="border rounded-xl p-4 shadow-sm hover:shadow-md transition bg-white flex flex-col justify-between"
         >
-          <p className="font-semibold text-sm truncate mb-3">📄 {f.name}</p>
+        <p className="font-semibold text-sm truncate">📄 {f.name}</p>
+
+        <p className="text-xs text-gray-500 mb-2">
+          {formatTimeAgo(f.uploaded_at)}
+        </p>
 
           <div className="flex gap-2 mt-auto">
-            <Button size="small" variant="outlined" onClick={() => downloadFile(f)}>
-              Télécharger
-            </Button>
             <Button
-              size="small"
-              variant="contained"
-              onClick={() => {
-                setViewFile(f);
-                setViewDialogOpen(true);
-              }}
-            >
-              Voir
-            </Button>
+  size="small"
+  variant="outlined"
+  sx={{
+    color: '#1C5844',
+    borderColor: '#1C5844',
+    '&:hover': {
+      borderColor: '#144233',
+      backgroundColor: 'rgba(28, 88, 68, 0.1)',
+    },
+  }}
+  onClick={() => downloadFile(f)}
+>
+  Télécharger
+</Button>
+
+<Button
+  size="small"
+  variant="contained"
+  sx={{
+    backgroundColor: '#1C5844',
+    '&:hover': {
+      backgroundColor: '#144233',
+    },
+  }}
+  onClick={() => {
+    setViewFile(f);
+    setViewDialogOpen(true);
+  }}
+>
+  Voir
+</Button>
           </div>
         </div>
       ))}
@@ -818,20 +843,24 @@ const markViewed = async (fileId: number) => {
   ) : (
     uploadedFiles[selectedEspace].map((f) => (
       <div key={f.id}>
-        📎 {f.name}
-        <Button size="small" onClick={() => downloadFile(f)}>
-          Télécharger
-        </Button>
-        <Button
-          size="small"
-          onClick={() => {
-            setViewFile(f);
-            setViewDialogOpen(true);
-          }}
-        >
-          Voir
-        </Button>
-      </div>
+  📎 {f.name}
+  <p className="text-xs text-gray-500">
+    {formatTimeAgo(f.uploaded_at)}
+  </p>
+
+  <Button size="small" onClick={() => downloadFile(f)}>
+    Télécharger
+  </Button>
+  <Button
+    size="small"
+    onClick={() => {
+      setViewFile(f);
+      setViewDialogOpen(true);
+    }}
+  >
+    Voir
+  </Button>
+</div>
     ))
   )}
 </div>
